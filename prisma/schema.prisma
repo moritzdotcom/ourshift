@@ -1,0 +1,116 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(uuid())
+  email          String          @unique
+  name           String
+  role           Role            @default(USER)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  shifts         Shift[]
+  changeRequests ChangeRequest[]
+  payRules       PayRule[]
+}
+
+model Shift {
+  id             String          @id @default(uuid())
+  user           User            @relation(fields: [userId], references: [id])
+  userId         String
+  code           ShiftCode?      @relation(fields: [codeId], references: [id])
+  codeId         String?
+  start          DateTime
+  end            DateTime
+  clockIn        DateTime?
+  clockInSource  TimeSource?
+  clockOut       DateTime?
+  clockOutSource TimeSource?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  changeRequests ChangeRequest[]
+}
+
+model ChangeRequest {
+  id        String       @id @default(uuid())
+  user      User         @relation(fields: [userId], references: [id])
+  userId    String
+  shift     Shift        @relation(fields: [shiftId], references: [id])
+  shiftId   String
+  clockIn   DateTime
+  clockOut  DateTime
+  status    ChangeStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model ShiftCode {
+  id             String  @id @default(uuid())
+  code           String  @unique
+  label          String
+  color          String
+  description    String?
+  // Zeitfenster (Minuten ab Tagesbeginn). Über-Mitternacht möglich: windowEndMin < windowStartMin.
+  windowStartMin Int? // null = ganztägig
+  windowEndMin   Int?
+  sortOrder      Int     @default(0)
+  shifts         Shift[]
+}
+
+model PayRule {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  name            String
+  // Zeitfenster (Minuten ab Tagesbeginn). Über-Mitternacht möglich: end < start
+  windowStartMin  Int? // null = ganztägig
+  windowEndMin    Int?
+  // 0=So..6=Sa
+  daysOfWeek      Int[]
+  // Feiertagslogik
+  holidayOnly     Boolean   @default(false) // nur an Feiertagen
+  excludeHolidays Boolean   @default(false) // nicht an Feiertagen
+  // Gültigkeit
+  validFrom       DateTime
+  validUntil      DateTime? // null = offen (unbefristet)
+  percent         Decimal?  @db.Decimal(5, 2) // z. B. 90.00
+  createdAt       DateTime  @default(now())
+
+  @@index([userId, validFrom])
+}
+
+model Holiday {
+  id   String   @id @default(uuid())
+  date DateTime
+  name String
+}
+
+enum Role {
+  USER
+  MANAGER
+  ADMIN
+}
+
+enum ChangeStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TimeSource {
+  MANUAL
+  KIOSK
+  MOBILE
+}
