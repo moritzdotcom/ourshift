@@ -15,15 +15,63 @@ datasource db {
 }
 
 model User {
-  id             String          @id @default(uuid())
-  email          String          @unique
-  name           String
-  role           Role            @default(USER)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id              String           @id @default(uuid())
+  employeeNumber  String?          @unique
+  firstName       String
+  lastName        String
+  email           String?          @unique
+  phone           String?
+  role            Role             @default(EMPLOYEE)
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  // Auth
+  credentials     UserCredential?
+  kiosk           KioskCredential?
+  // HR
+  employmentStart DateTime? // Beginn der Tätigkeit (erstmaliger Eintritt)
+  terminationDate DateTime? // Kündigungs- / Austrittsdatum, falls vorhanden
+
+  contracts      DigitalContract[]
+  payRules       PayRule[] // bereits vorhanden (userId in PayRule)
   shifts         Shift[]
   changeRequests ChangeRequest[]
-  payRules       PayRule[]
+}
+
+model UserCredential {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id])
+  passwordHash      String // bcrypt/argon2id
+  passwordUpdatedAt DateTime @default(now())
+}
+
+model KioskCredential {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  pinHash      String // Hash der 4-6-stelligen PIN
+  pinUpdatedAt DateTime @default(now())
+}
+
+model DigitalContract {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  validFrom  DateTime
+  validUntil DateTime?
+
+  salaryMonthlyCents Int? // Gehalt/Monat in Cent (integer)
+  hourlyRateCents    Int? // Stundensatz in Cent
+
+  vacationDaysAnnual Int? // Jahresurlaubstage (z. B. 28)
+  weeklyHours        Decimal? @db.Decimal(5, 2) // z. B. 40.00
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, validFrom])
 }
 
 model Shift {
@@ -98,7 +146,7 @@ model Holiday {
 }
 
 enum Role {
-  USER
+  EMPLOYEE
   MANAGER
   ADMIN
 }
