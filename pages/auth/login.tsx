@@ -40,7 +40,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen grid place-items-center bg-gray-50 p-6">
+    <div className="min-h-screen max-h-screen grid place-items-center bg-gray-50 p-6">
       <Card withBorder radius="lg" p="xl" className="w-full max-w-md bg-white">
         <div className="flex flex-col items-center gap-2 mb-6">
           <div className="w-2/3 mb-5">
