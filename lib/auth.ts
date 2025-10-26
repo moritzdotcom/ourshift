@@ -1,6 +1,8 @@
 import { SignJWT, jwtVerify, JWTPayload } from 'jose';
 import { serialize } from 'cookie';
 import type { NextApiResponse, NextApiRequest } from 'next';
+import prisma from '@/lib/prismadb';
+import { Role } from '@/generated/prisma';
 
 const ALG = 'HS256';
 const COOKIE_NAME = 'os_session';
@@ -75,4 +77,78 @@ export function readAuthCookie(req: NextApiRequest) {
     })
   );
   return map[COOKIE_NAME] || null;
+}
+
+export async function getCurrentUser(req: NextApiRequest): Promise<
+  | {
+      ok: false;
+      user: undefined;
+      error: string;
+    }
+  | {
+      ok: true;
+      user: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string | null;
+        role: Role;
+        isActive: boolean;
+      };
+      error: undefined;
+    }
+> {
+  const token = readAuthCookie(req);
+  if (!token) return { ok: false, user: undefined, error: 'Unauthorized' };
+
+  const payload = await verifySession(token);
+  const userId = payload.sub;
+  if (!userId) return { ok: false, user: undefined, error: 'Invalid session' };
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      role: true,
+      isActive: true,
+    },
+  });
+  if (!user) return { ok: false, user: undefined, error: 'User not found' };
+  return { ok: true, user, error: undefined };
+}
+
+export async function getCurrentUserId(req: NextApiRequest): Promise<
+  | {
+      ok: false;
+      userId: undefined;
+      error: string;
+    }
+  | {
+      ok: true;
+      userId: string;
+      error: undefined;
+    }
+> {
+  const token = readAuthCookie(req);
+  if (!token) return { ok: false, userId: undefined, error: 'Unauthorized' };
+
+  const payload = await verifySession(token);
+  const userId = payload.sub;
+  if (!userId)
+    return { ok: false, userId: undefined, error: 'Invalid session' };
+
+  return { ok: true, userId, error: undefined };
+}
+
+export function hasRole(user: { role: Role }, requiredRole: Role) {
+  const userRole = user.role;
+  const hierarchy = {
+    EMPLOYEE: 0,
+    MANAGER: 1,
+    ADMIN: 2,
+  };
+  return hierarchy[userRole] >= hierarchy[requiredRole];
 }

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma migrate deploy && prisma generate && next build",
     "start": "next start"
   },
   "dependencies": {
@@ -12,6 +12,7 @@
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "^10.0.0",
     "@mantine/core": "^8.3.3",
+    "@mantine/dates": "^8.3.4",
     "@mantine/hooks": "^8.3.3",
     "@prisma/client": "^6.16.3",
     "@prisma/extension-accelerate": "^2.0.2",
@@ -26,7 +27,8 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hot-toast": "^2.6.0",
-    "recharts": "^3.2.1"
+    "recharts": "^3.2.1",
+    "swr": "^2.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

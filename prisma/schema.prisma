@@ -36,6 +36,8 @@ model User {
   payRules       PayRule[] // bereits vorhanden (userId in PayRule)
   shifts         Shift[]
   changeRequests ChangeRequest[]
+  vacationDays   VacationDay[]
+  shiftAbsences  ShiftAbsence[]
 }
 
 model UserCredential {
@@ -75,10 +77,10 @@ model DigitalContract {
 }
 
 model Shift {
-  id             String          @id @default(uuid())
-  user           User            @relation(fields: [userId], references: [id])
+  id             String         @id @default(uuid())
+  user           User           @relation(fields: [userId], references: [id])
   userId         String
-  code           ShiftCode?      @relation(fields: [codeId], references: [id])
+  code           ShiftCode?     @relation(fields: [codeId], references: [id])
   codeId         String?
   start          DateTime
   end            DateTime
@@ -86,22 +88,35 @@ model Shift {
   clockInSource  TimeSource?
   clockOut       DateTime?
   clockOutSource TimeSource?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  changeRequests ChangeRequest[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  changeRequest  ChangeRequest?
+  shiftAbsence   ShiftAbsence?
 }
 
 model ChangeRequest {
   id        String       @id @default(uuid())
   user      User         @relation(fields: [userId], references: [id])
   userId    String
-  shift     Shift        @relation(fields: [shiftId], references: [id])
-  shiftId   String
+  shift     Shift        @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  shiftId   String       @unique
   clockIn   DateTime
   clockOut  DateTime
   status    ChangeStatus @default(PENDING)
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
+}
+
+model ShiftAbsence {
+  id        String        @id @default(uuid())
+  user      User          @relation(fields: [userId], references: [id])
+  userId    String
+  shift     Shift         @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  shiftId   String        @unique
+  status    ChangeStatus  @default(PENDING)
+  reason    AbsenceReason
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 }
 
 model ShiftCode {
@@ -114,6 +129,7 @@ model ShiftCode {
   windowStartMin Int? // null = ganztägig
   windowEndMin   Int?
   sortOrder      Int     @default(0)
+  isWorkingShift Boolean @default(true)
   shifts         Shift[]
 }
 
@@ -135,14 +151,38 @@ model PayRule {
   validUntil      DateTime? // null = offen (unbefristet)
   percent         Decimal?  @db.Decimal(5, 2) // z. B. 90.00
   createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
 
   @@index([userId, validFrom])
 }
 
+model KpiCache {
+  id                String    @id @default(cuid())
+  type              KpiType
+  year              Int
+  monthIndex        Int // 0-11
+  payload           Json // Cache-Ergebnis
+  calculationDoneAt DateTime
+  depsUpdatedAt     DateTime? // jüngste Änderung an relevanten Tabellen
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([type, year, monthIndex])
+}
+
 model Holiday {
-  id   String   @id @default(uuid())
-  date DateTime
-  name String
+  id        String   @id @default(uuid())
+  date      DateTime
+  name      String
+  createdAt DateTime @default(now())
+}
+
+model VacationDay {
+  id        String   @id @default(uuid())
+  date      DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
 
 enum Role {
@@ -157,8 +197,17 @@ enum ChangeStatus {
   REJECTED
 }
 
+enum AbsenceReason {
+  SICKNESS
+}
+
 enum TimeSource {
   MANUAL
   KIOSK
   MOBILE
+}
+
+enum KpiType {
+  PAYROLL
+  DASHBOARD
 }

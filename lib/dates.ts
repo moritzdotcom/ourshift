@@ -22,6 +22,23 @@ export function dateToHuman(d: string | Date | null | undefined) {
   });
 }
 
+export function timeToHuman(s: string | Date) {
+  const d = typeof s === 'string' ? new Date(s) : s;
+  return d.toLocaleTimeString('de', { hour: '2-digit', minute: '2-digit' });
+}
+
+export function dateTimeToHuman(d: string | Date | null | undefined) {
+  if (!d) return '';
+  const date = new Date(d);
+  return date.toLocaleDateString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export function dateToISO(d: string | Date | null | undefined) {
   if (!d) return '';
   const date = new Date(d);
@@ -59,19 +76,16 @@ export function mergeDateAndMinutes(
   date: Date | string,
   minutes: number | null
 ): string {
-  const d = new Date(date);
-  // Datum auslesen (lokales Datum, aber nur Tag/Monat/Jahr wichtig)
-  const year = d.getFullYear();
-  const month = d.getMonth(); // 0-based
+  const d = new Date(date); // Basisdatum (lokal interpretiert)
+  const y = d.getFullYear();
+  const m = d.getMonth();
   const day = d.getDate();
 
-  // Wenn keine Minuten, dann Mitternacht UTC (des lokalen Datums)
   const totalMin = minutes ?? 0;
-  const hours = Math.floor(totalMin / 60);
-  const mins = totalMin % 60;
+  const hh = Math.floor(totalMin / 60);
+  const mm = totalMin % 60;
 
-  // Konvertiere lokale Zeit in UTC (indem du Zeitzonenoffset abziehst)
-  const local = new Date(year, month, day, hours, mins, 0);
-  const utcMs = local.getTime() - local.getTimezoneOffset() * 60_000;
-  return new Date(utcMs).toISOString();
+  // Lokale Komponenten -> Date -> ISO (UTC). KEINE eigene Offset-Rechnung!
+  const local = new Date(y, m, day, hh, mm, 0, 0);
+  return local.toISOString();
 }
