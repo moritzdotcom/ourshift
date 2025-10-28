@@ -51,13 +51,11 @@ async function handlePOST(req: NextApiRequest, res: NextApiResponse) {
       s.vacation &&
       (s.state === 'new' || (s.state === 'updated' && s.existingId))
   );
-  console.log({ newVacationDays });
 
   // DELETE vacation days
   const toDeleteVacationDays = data.filter(
     (s) => s.vacation && s.existingId && s.state === 'deleted'
   );
-  console.log({ toDeleteVacationDays });
 
   const response = {
     created: toCreate.length,

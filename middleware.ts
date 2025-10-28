@@ -2,7 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const COOKIE_NAME = 'os_session';
+const AUTH_COOKIE_NAME = 'os_session';
+const KIOSK_COOKIE_NAME = 'kiosk_mode';
 const ALG = 'HS256';
 const REDIRECT_IF_NOT_AUTHENTICATED = '/auth/login';
 const REDIRECT_IF_NOT_AUTHORIZED = '/';
@@ -10,6 +11,7 @@ const REDIRECT_IF_NOT_AUTHORIZED = '/';
 // Pfade, die ohne Auth erreichbar sein dürfen:
 const PUBLIC_PATHS = new Set<string>([
   '/auth/login', // Login
+  '/auth/logout', // Logout
 ]);
 
 function isPublicPath(pathname: string) {
@@ -28,8 +30,22 @@ export async function middleware(req: NextRequest) {
   // Öffentliche Routen durchlassen
   if (isPublicPath(pathname)) return NextResponse.next();
 
+  const kioskMode = req.cookies.get(KIOSK_COOKIE_NAME)?.value === '1';
+
+  if (kioskMode) {
+    const isKioskPage = pathname === '/kiosk';
+    const isKioskApi = pathname.startsWith('/api/kiosk');
+
+    if (!isKioskPage && !isKioskApi) {
+      const url = new URL('/kiosk', req.url);
+      return NextResponse.redirect(url);
+    }
+
+    return NextResponse.next();
+  }
+
   // Auth-Cookie prüfen
-  const token = req.cookies.get(COOKIE_NAME)?.value;
+  const token = req.cookies.get(AUTH_COOKIE_NAME)?.value;
   if (!token) {
     const url = new URL(REDIRECT_IF_NOT_AUTHENTICATED, req.url);
     url.searchParams.set('next', pathname);

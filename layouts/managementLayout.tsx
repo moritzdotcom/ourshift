@@ -26,6 +26,7 @@ import { hasRole } from '@/lib/auth';
 import { Role } from '@/generated/prisma';
 import axios from 'axios';
 import useSWR from 'swr';
+import { KioskStartDialog } from '@/components/kiosk/startModal';
 
 export default function ManagementLayout({
   children,
@@ -105,12 +106,7 @@ export default function ManagementLayout({
         </Group>
 
         <Group>
-          {/* Platz für Benutzer-Menü, Zeitraum, Logout etc. */}
-          <Tooltip label="Demnächst: Schnellzugriffe" withArrow>
-            <ActionIcon variant="light" color="gray">
-              <IconFileSpreadsheet size={18} />
-            </ActionIcon>
-          </Tooltip>
+          <KioskStartDialog />
         </Group>
       </AppShell.Header>
 

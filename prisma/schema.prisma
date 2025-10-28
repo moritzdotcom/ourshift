@@ -53,6 +53,7 @@ model KioskCredential {
   userId       String   @unique
   user         User     @relation(fields: [userId], references: [id])
   pinHash      String // Hash der 4-6-stelligen PIN
+  pinLength    Int      @default(4) // Länge der PIN (4-6)
   pinUpdatedAt DateTime @default(now())
 }
 

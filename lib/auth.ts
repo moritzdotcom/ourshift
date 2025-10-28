@@ -3,6 +3,7 @@ import { serialize } from 'cookie';
 import type { NextApiResponse, NextApiRequest } from 'next';
 import prisma from '@/lib/prismadb';
 import { Role } from '@/generated/prisma';
+import { failureResp, successResp } from './apiResponse';
 
 const ALG = 'HS256';
 const COOKIE_NAME = 'os_session';
@@ -79,31 +80,13 @@ export function readAuthCookie(req: NextApiRequest) {
   return map[COOKIE_NAME] || null;
 }
 
-export async function getCurrentUser(req: NextApiRequest): Promise<
-  | {
-      ok: false;
-      user: undefined;
-      error: string;
-    }
-  | {
-      ok: true;
-      user: {
-        id: string;
-        firstName: string;
-        lastName: string;
-        email: string | null;
-        role: Role;
-        isActive: boolean;
-      };
-      error: undefined;
-    }
-> {
+export async function getCurrentUser(req: NextApiRequest) {
   const token = readAuthCookie(req);
-  if (!token) return { ok: false, user: undefined, error: 'Unauthorized' };
+  if (!token) return failureResp('user', undefined, 'Unauthorized');
 
   const payload = await verifySession(token);
   const userId = payload.sub;
-  if (!userId) return { ok: false, user: undefined, error: 'Invalid session' };
+  if (!userId) return failureResp('user', undefined, 'Invalid session');
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -112,12 +95,13 @@ export async function getCurrentUser(req: NextApiRequest): Promise<
       firstName: true,
       lastName: true,
       email: true,
+      phone: true,
       role: true,
       isActive: true,
     },
   });
-  if (!user) return { ok: false, user: undefined, error: 'User not found' };
-  return { ok: true, user, error: undefined };
+  if (!user) return failureResp('user', undefined, 'User not found');
+  return successResp('user', user);
 }
 
 export async function getCurrentUserId(req: NextApiRequest): Promise<

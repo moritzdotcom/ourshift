@@ -40,3 +40,13 @@ export function buildShiftWhereQuery(
   }
   return { where };
 }
+
+export function shiftIsActive(
+  shift: { start: Date | string; end: Date | string },
+  gracePeriod?: number
+) {
+  const now = new Date();
+  const start = new Date(new Date(shift.start).getTime() - (gracePeriod || 0));
+  const end = new Date(new Date(shift.end).getTime() + (gracePeriod || 0));
+  return now > start && now < end;
+}

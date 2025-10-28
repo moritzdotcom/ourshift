@@ -17,6 +17,7 @@ import {
   IconCalendarEvent,
   IconAlertTriangle,
   IconInfoCircle,
+  IconUserSquare,
 } from '@tabler/icons-react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import TimeChangeRequestModal from '@/components/changeRequest/modal';
@@ -25,6 +26,8 @@ import { ApiPostChangeRequestResponse } from './api/changeRequests';
 import HomeShiftRow from '@/components/home/shiftRow';
 import ShiftRowPast from '@/components/home/shiftRowPast';
 import HomeCurrentShift from '@/components/home/currentShift';
+import ManagementEntryButton from '@/components/home/managementEntryButton';
+import { hasRole } from '@/lib/auth';
 
 export type MyShift = ApiMyShiftResponse['shifts'][number];
 
@@ -197,7 +200,7 @@ export default function HomePage() {
       <AppShell.Main className="min-h-screen bg-gray-50">
         {/* Header */}
         <div className="px-4 sm:px-6 pt-6 pb-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <div className="flex items-center gap-3">
               <Image
                 src="/icon.png"
@@ -220,14 +223,26 @@ export default function HomePage() {
                 </Text>
               </div>
             </div>
-            <Link href="/plan" className="hidden sm:block">
-              <Button
-                variant="light"
-                leftSection={<IconCalendarEvent size={16} />}
-              >
-                Dein Schichtplan
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              {hasRole(user, 'MANAGER') && <ManagementEntryButton />}
+              <Link href="/plan">
+                <Button
+                  variant="light"
+                  leftSection={<IconCalendarEvent size={16} />}
+                >
+                  Dein Schichtplan
+                </Button>
+              </Link>
+              <Link href="/profile">
+                <Button
+                  variant="light"
+                  color="grape"
+                  leftSection={<IconUserSquare size={16} />}
+                >
+                  Dein Profil
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 
