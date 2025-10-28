@@ -10,6 +10,7 @@ import {
   Text,
   Group,
   Stack,
+  Center,
 } from '@mantine/core';
 import axios from 'axios';
 
@@ -40,7 +41,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen max-h-screen grid place-items-center bg-gray-50 p-6">
+    <Center
+      style={{
+        minHeight: '100dvh',
+        backgroundColor: 'var(--mantine-color-gray-0)',
+        padding: '1rem',
+      }}
+    >
       <Card withBorder radius="lg" p="xl" className="w-full max-w-md bg-white">
         <div className="flex flex-col items-center gap-2 mb-6">
           <div className="w-2/3 mb-5">
@@ -70,7 +77,7 @@ export default function LoginPage() {
         <form onSubmit={onSubmit}>
           <Stack gap="sm">
             <TextInput
-              label="E-Mail oder MA-Nummer"
+              label="E-Mail"
               placeholder="z. B. max@firma.de"
               value={emailOrUser}
               onChange={(e) => setEmailOrUser(e.currentTarget.value)}
@@ -98,6 +105,6 @@ export default function LoginPage() {
           </Stack>
         </form>
       </Card>
-    </div>
+    </Center>
   );
 }

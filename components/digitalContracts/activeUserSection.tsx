@@ -73,7 +73,11 @@ export default function ActiveUserSection({
 
   // --------- USER UPDATE (bereits vorhanden) ----------
   async function handleUpdate(
-    user: Partial<typeof activeUser> & { id?: string; password?: string }
+    user: Partial<typeof activeUser> & {
+      id?: string;
+      password?: string;
+      kioskPin?: string;
+    }
   ) {
     if (!user.id) return;
     const { data } = await axios.put<User>(`/api/users/${user.id}`, user);

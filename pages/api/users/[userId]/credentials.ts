@@ -26,7 +26,7 @@ async function handlePOST(
 ) {
   const { password, pin } = req.body;
 
-  if (password) {
+  if (typeof password === 'string') {
     const passwordHash = await hashPassword(password);
     await prisma.userCredential.upsert({
       where: { userId: id },
@@ -35,12 +35,13 @@ async function handlePOST(
     });
   }
 
-  if (pin) {
+  if (typeof pin === 'string') {
     const pinHash = await hashPassword(pin);
+    const pinLength = pin.length;
     await prisma.kioskCredential.upsert({
       where: { userId: id },
-      update: { pinHash },
-      create: { userId: id, pinHash },
+      update: { pinHash, pinLength },
+      create: { userId: id, pinHash, pinLength },
     });
   }
 
