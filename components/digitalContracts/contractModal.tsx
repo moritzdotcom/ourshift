@@ -148,7 +148,7 @@ export default function ContractModal({
         />
 
         <NumberInput
-          label="Gehalt/Monat (€)"
+          label="Monatl. Grundgehalt (€)"
           value={salaryMonthly}
           onChange={(v) => setSalaryMonthly(v as any)}
           step={50}

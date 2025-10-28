@@ -14,7 +14,10 @@ export default function ContractItem({
           dateToHuman(contract.validUntil) || 'offen'
         }`}
       />
-      <KV label="Gehalt/Monat" value={fmtEuro(contract.salaryMonthlyCents)} />
+      <KV
+        label="Monatl. Grundgehalt"
+        value={fmtEuro(contract.salaryMonthlyCents)}
+      />
       <KV label="Stundensatz" value={fmtEuro(contract.hourlyRateCents)} />
       <KV label="Urlaubstage/Jahr" value={contract.vacationDaysAnnual ?? '—'} />
       <KV
