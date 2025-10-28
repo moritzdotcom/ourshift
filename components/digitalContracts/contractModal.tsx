@@ -148,18 +148,23 @@ export default function ContractModal({
         />
 
         <NumberInput
-          label="Monatl. Grundgehalt (€)"
+          label="Monatl. Grundgehalt"
           value={salaryMonthly}
           onChange={(v) => setSalaryMonthly(v as any)}
           step={50}
           min={0}
+          decimalSeparator=","
+          thousandSeparator="."
+          suffix=" €"
         />
         <NumberInput
-          label="Stundensatz (€)"
+          label="Stundensatz"
           value={hourlyRate}
           onChange={(v) => setHourlyRate(v as any)}
           step={0.5}
           min={0}
+          decimalSeparator=","
+          suffix=" €"
         />
 
         <NumberInput
@@ -168,6 +173,7 @@ export default function ContractModal({
           onChange={(v) => setVacationDaysAnnual(v as any)}
           step={1}
           min={0}
+          decimalSeparator=","
         />
         <NumberInput
           label="Stunden/Woche"
@@ -175,6 +181,7 @@ export default function ContractModal({
           onChange={(v) => setWeeklyHours(v as any)}
           step={0.25}
           min={0}
+          decimalSeparator=","
         />
       </div>
 

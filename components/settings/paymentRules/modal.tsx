@@ -213,6 +213,7 @@ export default function RuleModal({
           min={0}
           max={500}
           placeholder="25"
+          decimalSeparator=","
         />
 
         <TextInput
