@@ -1,3 +1,4 @@
+import { authGuard } from '@/lib/auth';
 import prisma from '@/lib/prismadb';
 import { NextApiRequest, NextApiResponse } from 'next';
 
@@ -5,6 +6,9 @@ export default async function handle(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const { ok, error } = await authGuard(req, 'MANAGER');
+  if (!ok) return res.status(401).json({ error });
+
   const { shiftCodeId } = req.query;
   if (typeof shiftCodeId !== 'string') {
     return res.status(400).json({ error: 'Invalid shiftCodeId' });
@@ -58,8 +62,9 @@ async function handleDELETE(
   res: NextApiResponse,
   id: string
 ) {
-  await prisma.shiftCode.delete({
+  await prisma.shiftCode.update({
     where: { id },
+    data: { archived: true },
   });
   return res.status(204).end();
 }

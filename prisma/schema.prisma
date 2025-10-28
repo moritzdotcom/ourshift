@@ -132,6 +132,7 @@ model ShiftCode {
   sortOrder      Int     @default(0)
   isWorkingShift Boolean @default(true)
   shifts         Shift[]
+  archived       Boolean @default(false)
 }
 
 model PayRule {

@@ -19,6 +19,7 @@ export default async function handle(
 async function handleGET(req: NextApiRequest, res: NextApiResponse) {
   const shiftCodes = await prisma.shiftCode.findMany({
     orderBy: { sortOrder: 'asc' },
+    where: { archived: false },
   });
   return res.json(shiftCodes);
 }
