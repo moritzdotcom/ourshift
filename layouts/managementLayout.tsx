@@ -41,7 +41,6 @@ export default function ManagementLayout({
     axios.get<number>('/api/changeRequests/count').then((r) => r.data)
   );
 
-  console.log('requestCount', requestCount);
   const links = [
     {
       label: 'Dashboard',
