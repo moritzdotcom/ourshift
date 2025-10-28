@@ -213,6 +213,20 @@ export function usePlanData(
   }
 
   function resetBaseFromCurrent() {
+    // Remove all 'deleted' entries from data
+    setData((prev) => {
+      const newData: Record<string, ShiftObj> = {};
+      for (const [k, v] of Object.entries(prev)) {
+        if (v.state === 'deleted') continue;
+        if (v.state === 'updated' || v.state === 'new') {
+          newData[k] = { ...v, state: 'unchanged' };
+        } else {
+          newData[k] = v;
+        }
+      }
+      return newData;
+    });
+    // Rebuild baseDataRef from current data
     baseDataRef.current = buildNormalizedFromData(data);
   }
 

@@ -1,3 +1,4 @@
+import { hashPassword, hashPin } from '@/lib/password';
 import prisma from '@/lib/prismadb';
 import { NextApiRequest, NextApiResponse } from 'next';
 
@@ -35,6 +36,8 @@ async function handlePUT(
     isActive,
     employmentStart,
     terminationDate,
+    password,
+    kioskPin,
   } = req.body;
 
   const updated = await prisma.user.update({
@@ -51,6 +54,25 @@ async function handlePUT(
       terminationDate: terminationDate ? new Date(terminationDate) : null,
     },
   });
+
+  if (typeof password === 'string') {
+    const passwordHash = await hashPassword(password);
+    await prisma.userCredential.upsert({
+      where: { userId: id },
+      update: { passwordHash },
+      create: { userId: id, passwordHash },
+    });
+  }
+
+  if (typeof kioskPin === 'string') {
+    const pinHash = await hashPin(kioskPin);
+    const pinLength = kioskPin.length;
+    await prisma.kioskCredential.upsert({
+      where: { userId: id },
+      update: { pinHash, pinLength },
+      create: { userId: id, pinHash, pinLength },
+    });
+  }
 
   return res.status(200).json(updated);
 }
