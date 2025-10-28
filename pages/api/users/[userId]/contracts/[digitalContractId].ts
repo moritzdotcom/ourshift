@@ -78,6 +78,8 @@ export default async function handler(
         hourlyRateCents: c.hourlyRateCents ?? null,
         vacationDaysAnnual: c.vacationDaysAnnual ?? null,
         weeklyHours: c.weeklyHours == null ? null : c.weeklyHours,
+        vacationBonus: c.vacationBonus ?? null,
+        christmasBonus: c.christmasBonus ?? null,
       },
     });
 

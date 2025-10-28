@@ -25,7 +25,7 @@ export default function DigitalContractsSidebar({
 }: {
   users: User[];
   activeUserId: string | null;
-  setActiveUserId: Dispatch<SetStateAction<string | null>>;
+  setActiveUserId: (id: string) => void;
   setUsers: Dispatch<SetStateAction<ApiGetUsersResponse>>;
 }) {
   const [query, setQuery] = useState('');

@@ -4,7 +4,6 @@ import {
   NavLink,
   ScrollArea,
   ActionIcon,
-  Tooltip,
   Text,
   Badge,
 } from '@mantine/core';
@@ -12,7 +11,6 @@ import {
   IconCalendar,
   IconSettings,
   IconUsers,
-  IconFileSpreadsheet,
   IconLayoutDashboard,
   IconClipboardCheck,
   IconMenu2,
@@ -82,11 +80,11 @@ export default function ManagementLayout({
 
   return (
     <AppShell
-      layout="alt"
       header={{ height: 56 }}
       navbar={{
         width: collapsed ? 65 : 230,
-        breakpoint: 0,
+        breakpoint: 'sm',
+        collapsed: { mobile: collapsed },
       }}
       padding={0}
     >
@@ -101,7 +99,9 @@ export default function ManagementLayout({
           >
             {collapsed ? <IconMenu2 /> : <IconChevronLeft />}
           </ActionIcon>
-          <Text fw={600}>Management Console</Text>
+          <Text className="hidden sm:block" fw={600}>
+            Management Console
+          </Text>
         </Group>
 
         <Group>

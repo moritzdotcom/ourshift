@@ -62,6 +62,13 @@ export default function ContractModal({
     initial?.weeklyHours ? Number(initial.weeklyHours) : ''
   );
 
+  const [vacationBonus, setVacationBonus] = useState<number | ''>(
+    initial?.vacationBonus ?? ''
+  );
+  const [christmasBonus, setChristmasBonus] = useState<number | ''>(
+    initial?.christmasBonus ?? ''
+  );
+
   useEffect(() => {
     if (!opened) return;
     if (isEdit && initial) {
@@ -71,6 +78,8 @@ export default function ContractModal({
       setHourlyRate(centsToInput(initial.hourlyRateCents) || '');
       setVacationDaysAnnual(initial.vacationDaysAnnual ?? '');
       setWeeklyHours(initial.weeklyHours ? Number(initial.weeklyHours) : '');
+      setVacationBonus(initial.vacationBonus ?? '');
+      setChristmasBonus(initial.christmasBonus ?? '');
     }
     if (!isEdit && initial) {
       // Create aus aktuellem Vertrag: übernehme Werte, setze validFrom=today, validUntil leer
@@ -80,6 +89,8 @@ export default function ContractModal({
       setHourlyRate(centsToInput(initial.hourlyRateCents) || '');
       setVacationDaysAnnual(initial.vacationDaysAnnual ?? '');
       setWeeklyHours(initial.weeklyHours ? Number(initial.weeklyHours) : '');
+      setVacationBonus(initial.vacationBonus ?? '');
+      setChristmasBonus(initial.christmasBonus ?? '');
     }
   }, [opened, isEdit, initial, today]);
 
@@ -104,6 +115,8 @@ export default function ContractModal({
       vacationDaysAnnual:
         vacationDaysAnnual === '' ? null : Number(vacationDaysAnnual),
       weeklyHours: weeklyHours === '' ? null : (Number(weeklyHours) as any),
+      vacationBonus: vacationBonus === '' ? null : Number(vacationBonus),
+      christmasBonus: christmasBonus === '' ? null : Number(christmasBonus),
     });
   }
 
@@ -131,7 +144,7 @@ export default function ContractModal({
             )}; vorhandener Vertrag wird automatisch beendet.`}
       </Alert>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
         <TextInput
           label="Gültig ab"
           type="date"
@@ -159,6 +172,9 @@ export default function ContractModal({
         />
         <NumberInput
           label="Stundensatz"
+          description={`Berechnet: ${fmtEuro(
+            (salaryMonthly || 0) / ((weeklyHours || 0) * 4.35)
+          )}`}
           value={hourlyRate}
           onChange={(v) => setHourlyRate(v as any)}
           step={0.5}
@@ -183,6 +199,31 @@ export default function ContractModal({
           min={0}
           decimalSeparator=","
         />
+
+        <NumberInput
+          label="Urlaubsgeld"
+          description="in % vom Grundgehalt"
+          value={vacationBonus}
+          onChange={(v) => setVacationBonus(v as any)}
+          step={0.5}
+          min={0}
+          max={500}
+          placeholder="50%"
+          suffix="%"
+          decimalSeparator=","
+        />
+        <NumberInput
+          label="Weihnachtsgeld"
+          description="in % vom Grundgehalt"
+          value={christmasBonus}
+          onChange={(v) => setChristmasBonus(v as any)}
+          step={0.5}
+          min={0}
+          max={500}
+          placeholder="50%"
+          suffix="%"
+          decimalSeparator=","
+        />
       </div>
 
       {dateError && (
@@ -201,4 +242,12 @@ export default function ContractModal({
       </Group>
     </Modal>
   );
+}
+
+function fmtEuro(num: number) {
+  if (num == null) return '-';
+  return new Intl.NumberFormat('de-DE', {
+    style: 'currency',
+    currency: 'EUR',
+  }).format(num);
 }

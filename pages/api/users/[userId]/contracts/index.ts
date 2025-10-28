@@ -97,6 +97,8 @@ export default async function handler(
         hourlyRateCents: contract.hourlyRateCents ?? null,
         vacationDaysAnnual: contract.vacationDaysAnnual ?? null,
         weeklyHours: contract.weeklyHours == null ? null : contract.weeklyHours,
+        vacationBonus: contract.vacationBonus ?? null,
+        christmasBonus: contract.christmasBonus ?? null,
       },
     });
 

@@ -65,11 +65,14 @@ model DigitalContract {
   validFrom  DateTime
   validUntil DateTime?
 
-  salaryMonthlyCents Int? // Gehalt/Monat in Cent (integer)
+  salaryMonthlyCents Int? // Gehalt/Monat in Cent
   hourlyRateCents    Int? // Stundensatz in Cent
 
   vacationDaysAnnual Int? // Jahresurlaubstage (z. B. 28)
   weeklyHours        Decimal? @db.Decimal(5, 2) // z. B. 40.00
+
+  vacationBonus  Int? // Urlaubsgeld in Prozent vom Gehalt
+  christmasBonus Int? // Wiehnachtsgeld in Prozent vom Gehalt
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
