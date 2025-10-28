@@ -10,7 +10,7 @@ function daysInMonth(year: number, monthIndex: number) {
 }
 function isWeekend(year: number, monthIndex: number, day: number) {
   const d = new Date(year, monthIndex, day).getDay();
-  return d === 0 || d === 6;
+  return d === 0;
 }
 function keyOf(y: number, m: number, d: number) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
