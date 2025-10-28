@@ -20,6 +20,9 @@ export default function ShiftCodeModal({
   const [code, setCode] = useState(initial?.code || '');
   const [label, setLabel] = useState(initial?.label || '');
   const [description, setDescription] = useState(initial?.description || '');
+  const [descriptionEdited, setDescriptionEdited] = useState(
+    Boolean(initial?.description)
+  );
   const [start, setStart] = useState(
     minToHHMM(initial?.windowStartMin ?? null)
   );
@@ -48,12 +51,19 @@ export default function ShiftCodeModal({
     onClose();
   }
 
+  // Prefill Description
+  useEffect(() => {
+    if (descriptionEdited) return;
+    setDescription(`${start} - ${end}`);
+  }, [start, end, descriptionEdited]);
+
   // ── Refill wenn initial oder opened wechselt
   useEffect(() => {
     if (!opened) return;
     setCode(initial?.code || '');
     setLabel(initial?.label || '');
     setDescription(initial?.description || '');
+    setDescriptionEdited(Boolean(initial?.description));
     setStart(minToHHMM(initial?.windowStartMin ?? null));
     setEnd(minToHHMM(initial?.windowEndMin ?? null));
     setSelectedColor(initial?.color ?? '');
@@ -101,7 +111,10 @@ export default function ShiftCodeModal({
           className="md:col-span-2"
           label="Beschreibung (optional)"
           value={description || ''}
-          onChange={(e) => setDescription(e.currentTarget.value)}
+          onChange={(e) => {
+            setDescriptionEdited(true);
+            setDescription(e.currentTarget.value);
+          }}
           placeholder="z. B. 08-16 Uhr"
         />
 
