@@ -34,6 +34,7 @@ export default async function handler(
   try {
     const { ok, userId, error } = await getCurrentUserId(req);
     if (!ok) return res.status(401).json({ error });
+
     const { where: shiftWhere, error: shiftError } = buildShiftWhereQuery(
       req.query.from,
       req.query.to,

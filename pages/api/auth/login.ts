@@ -19,7 +19,10 @@ export default async function handler(
   // User via email ODER employeeNumber/username finden
   const user = await prisma.user.findFirst({
     where: {
-      OR: [{ email: identifier }, { employeeNumber: identifier }],
+      OR: [
+        { email: identifier.toLowerCase() },
+        { employeeNumber: identifier.toLowerCase() },
+      ],
     },
     include: { credentials: true },
   });

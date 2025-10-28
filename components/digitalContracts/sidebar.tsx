@@ -1,6 +1,5 @@
 import { User } from '@/generated/prisma';
 import {
-  AppShell,
   ScrollArea,
   TextInput,
   Card,

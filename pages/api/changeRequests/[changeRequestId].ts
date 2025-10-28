@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import prisma from '@/lib/prismadb';
-import { getCurrentUser, hasRole } from '@/lib/auth';
+import { authGuard } from '@/lib/auth';
 import {
   approveChangeRequest,
   isValidStatus,
@@ -12,11 +11,8 @@ export default async function handle(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { ok, user, error } = await getCurrentUser(req);
+  const { ok, error } = await authGuard(req, 'MANAGER');
   if (!ok) return res.status(401).json({ error });
-
-  if (!hasRole(user, 'MANAGER'))
-    return res.status(401).json({ error: 'Not Authorized' });
 
   const { changeRequestId } = req.query;
   if (typeof changeRequestId !== 'string')

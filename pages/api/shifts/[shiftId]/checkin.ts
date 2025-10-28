@@ -12,6 +12,7 @@ export default async function handle(
 
   const { ok, userId, error } = await getCurrentUserId(req);
   if (!ok) return res.status(401).json({ error });
+
   if (req.method === 'POST') {
     await handlePOST(req, res, shiftId, userId);
   } else {

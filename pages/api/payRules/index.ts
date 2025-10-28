@@ -1,4 +1,5 @@
 import { Prisma } from '@/generated/prisma';
+import { authGuard } from '@/lib/auth';
 import prisma from '@/lib/prismadb';
 import { NextApiRequest, NextApiResponse } from 'next';
 
@@ -6,6 +7,9 @@ export default async function handle(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const { ok, error } = await authGuard(req, 'MANAGER');
+  if (!ok) return res.status(401).json({ error });
+
   if (req.method === 'GET') {
     await handleGET(req, res);
   } else if (req.method === 'POST') {

@@ -1,3 +1,4 @@
+import { authGuard } from '@/lib/auth';
 import prisma from '@/lib/prismadb';
 import { NextApiRequest, NextApiResponse } from 'next';
 
@@ -8,8 +9,14 @@ export default async function handle(
   if (req.method === 'GET') {
     await handleGET(req, res);
   } else if (req.method === 'POST') {
+    const { ok, error } = await authGuard(req, 'MANAGER');
+    if (!ok) return res.status(401).json({ error });
+
     await handlePOST(req, res);
   } else if (req.method === 'DELETE') {
+    const { ok, error } = await authGuard(req, 'MANAGER');
+    if (!ok) return res.status(401).json({ error });
+
     await handleDELETE(req, res);
   } else {
     throw new Error(

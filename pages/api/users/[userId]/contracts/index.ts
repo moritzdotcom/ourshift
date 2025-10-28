@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prismadb';
+import { authGuard } from '@/lib/auth';
 
 function parseDate(str?: string | null): Date | null {
   if (!str) return null;
@@ -28,6 +29,9 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const { ok, error } = await authGuard(req, 'MANAGER');
+  if (!ok) return res.status(401).json({ error });
+
   if (req.method !== 'POST') return res.status(405).end();
 
   const userId = req.query.userId as string;

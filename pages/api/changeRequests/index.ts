@@ -10,6 +10,7 @@ export default async function handle(
 ) {
   const { ok, user, error } = await getCurrentUser(req);
   if (!ok) return res.status(401).json({ error });
+
   if (req.method === 'GET') {
     if (!hasRole(user, 'MANAGER'))
       return res.status(401).json({ error: 'Not Authorized' });

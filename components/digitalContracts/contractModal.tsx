@@ -128,7 +128,7 @@ export default function ContractModal({
           ? 'Passe die aktuelle Vereinbarung an (Gültigkeit beachten).'
           : `Neue Vereinbarung ab ${dateToHuman(
               validFrom
-            )}; vorhandener Vertrag kann automatisch beendet werden.`}
+            )}; vorhandener Vertrag wird automatisch beendet.`}
       </Alert>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

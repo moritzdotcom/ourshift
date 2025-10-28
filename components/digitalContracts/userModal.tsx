@@ -1,14 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Modal,
-  TextInput,
-  Select,
-  Switch,
-  Group,
-  Button,
-  Alert,
-} from '@mantine/core';
-import { IconInfoCircle } from '@tabler/icons-react';
+import { Modal, TextInput, Select, Switch, Group, Button } from '@mantine/core';
 import { User } from '@/generated/prisma';
 import { dateToISO } from '@/lib/dates';
 
@@ -77,7 +68,7 @@ export default function UserModal({
   }, [kioskPin]);
 
   const canSubmit = useMemo(() => {
-    if (!firstName.trim() || !lastName.trim()) return false;
+    if (!firstName.trim() || !lastName.trim() || !email.trim()) return false;
     if (!isEdit) {
       // Create: Passwort & PIN Pflicht
       if (!password.trim()) return false;
@@ -100,12 +91,12 @@ export default function UserModal({
       ...(isEdit ? { id: initial!.id } : {}),
       firstName: firstName.trim(),
       lastName: lastName.trim(),
-      email: email || null,
+      email: email.toLowerCase(),
       phone: phone || null,
       role,
       isActive,
       employeeNumber: employeeNumber || null,
-      employmentStart: employmentStart ? new Date(employmentStart) : new Date(),
+      employmentStart: employmentStart ? new Date(employmentStart) : null,
       terminationDate: terminationDate ? new Date(terminationDate) : null,
     };
 
@@ -142,6 +133,7 @@ export default function UserModal({
           value={email || ''}
           onChange={(e) => setEmail(e.currentTarget.value)}
           type="email"
+          required
         />
         <TextInput
           label="Telefon"

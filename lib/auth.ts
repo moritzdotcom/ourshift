@@ -104,27 +104,15 @@ export async function getCurrentUser(req: NextApiRequest) {
   return successResp('user', user);
 }
 
-export async function getCurrentUserId(req: NextApiRequest): Promise<
-  | {
-      ok: false;
-      userId: undefined;
-      error: string;
-    }
-  | {
-      ok: true;
-      userId: string;
-      error: undefined;
-    }
-> {
+export async function getCurrentUserId(req: NextApiRequest) {
   const token = readAuthCookie(req);
-  if (!token) return { ok: false, userId: undefined, error: 'Unauthorized' };
+  if (!token) return failureResp('userId', undefined, 'Unauthorized');
 
   const payload = await verifySession(token);
   const userId = payload.sub;
-  if (!userId)
-    return { ok: false, userId: undefined, error: 'Invalid session' };
+  if (!userId) return failureResp('userId', undefined, 'Invalid Session');
 
-  return { ok: true, userId, error: undefined };
+  return successResp('userId', userId);
 }
 
 export function hasRole(user: { role: Role }, requiredRole: Role) {
@@ -135,4 +123,25 @@ export function hasRole(user: { role: Role }, requiredRole: Role) {
     ADMIN: 2,
   };
   return hierarchy[userRole] >= hierarchy[requiredRole];
+}
+
+export async function authGuard<U extends { role: Role }>(
+  req: NextApiRequest,
+  requiredRole: Role,
+  usr?: U
+) {
+  if (usr) {
+    if (!hasRole(usr, requiredRole))
+      return failureResp('user', usr, 'Not Authorized');
+
+    return successResp('user', usr);
+  } else {
+    const { ok, user, error } = await getCurrentUser(req);
+    if (!ok) return failureResp('user', undefined, error);
+
+    if (!hasRole(user, requiredRole))
+      return failureResp('user', user, 'Not Authorized');
+
+    return successResp('user', user);
+  }
 }

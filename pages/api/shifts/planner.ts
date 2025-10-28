@@ -1,4 +1,5 @@
 import { Prisma } from '@/generated/prisma';
+import { authGuard } from '@/lib/auth';
 import prisma from '@/lib/prismadb';
 import { buildShiftWhereQuery } from '@/lib/shift';
 import { buildVacationDayWhereQuery } from '@/lib/vacationDay';
@@ -8,10 +9,11 @@ export default async function handle(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const { ok, error } = await authGuard(req, 'MANAGER');
+  if (!ok) return res.status(401).json({ error });
+
   if (req.method === 'GET') {
     await handleGET(req, res);
-  } else if (req.method === 'POST') {
-    await handlePOST(req, res);
   } else {
     throw new Error(
       `The HTTP ${req.method} method is not supported at this route.`
@@ -78,20 +80,4 @@ async function handleGET(req: NextApiRequest, res: NextApiResponse) {
   } catch (err) {
     return res.status(500).json({ error: 'Serverfehler' });
   }
-}
-
-async function handlePOST(req: NextApiRequest, res: NextApiResponse) {
-  const { userId, codeId, start, end } = req.body;
-
-  const created = await prisma.shift.create({
-    data: {
-      userId,
-      codeId,
-      start: new Date(start),
-      end: new Date(end),
-    },
-    include: { code: true },
-  });
-
-  return res.status(201).json(created);
 }

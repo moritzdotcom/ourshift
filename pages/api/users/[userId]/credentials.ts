@@ -1,3 +1,4 @@
+import { authGuard } from '@/lib/auth';
 import { hashPassword } from '@/lib/password';
 import prisma from '@/lib/prismadb';
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -6,6 +7,9 @@ export default async function handle(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const { ok, error } = await authGuard(req, 'MANAGER');
+  if (!ok) return res.status(401).json({ error });
+
   const { userId } = req.query;
   if (typeof userId !== 'string') {
     return res.status(400).json({ error: 'Invalid userId' });
