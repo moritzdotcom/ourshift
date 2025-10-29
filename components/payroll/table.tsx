@@ -82,7 +82,7 @@ export default function PayrollTable({
                   </Table.Td>
                 </Table.Tr>
                 <Table.Tr>
-                  <Table.Td colSpan={7} className="!p-0 bg-slate-50">
+                  <Table.Td colSpan={8} className="!p-0 bg-slate-50">
                     <Collapse in={!!open[r.userId]}>
                       <div className="p-3">
                         <Text size="sm" c="dimmed" mb={6}>
