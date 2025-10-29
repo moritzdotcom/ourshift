@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import useSWR from 'swr';
 import axios from 'axios';
-import { Group, Title, Button, Text, Divider } from '@mantine/core';
+import { Group, Title, Button, Text, Divider, Stack } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import {
   IconChevronLeft,
@@ -23,6 +23,7 @@ import {
 import { MyShift } from '.';
 import Link from 'next/link';
 import HtmlHead from '@/components/htmlHead';
+import { minutesBetween } from '@/lib/dates';
 
 const fetcher = (url: string) => axios.get(url).then((r) => r.data);
 
@@ -75,6 +76,14 @@ export default function PlanPage() {
     return map;
   }, [shifts]);
 
+  const minutesWorked = useMemo(() => {
+    return shifts.reduce((a, shift) => {
+      if (shift.clockIn && shift.clockOut)
+        return a + minutesBetween(shift.clockIn, shift.clockOut);
+      return a + 0;
+    }, 0);
+  }, [shifts]);
+
   const monthLabel = useMemo(
     () =>
       new Date(year, month, 1).toLocaleDateString('de-DE', {
@@ -107,21 +116,30 @@ export default function PlanPage() {
         <Button
           leftSection={<IconHome size={15} />}
           variant="light"
-          size="xs"
-          mb={5}
+          size="sm"
+          mb={12}
         >
           Zur Startseite
         </Button>
       </Link>
       <Group justify="space-between" align="center">
-        <Title order={2}>Mein Schichtplan</Title>
+        <Stack gap={0}>
+          <Title order={2}>Mein Schichtplan</Title>
+          <Title fw={300} size="md" c="dimmed">
+            Gearbeitet: {Math.round(minutesWorked / 60)} Std.
+          </Title>
+        </Stack>
         <Group>
           <Button
             variant="light"
+            visibleFrom="sm"
             leftSection={<IconChevronLeft size={16} />}
             onClick={() => nav(-1)}
           >
             Zurück
+          </Button>
+          <Button variant="light" hiddenFrom="sm" onClick={() => nav(-1)}>
+            <IconChevronLeft size={16} />
           </Button>
           <Button
             variant="default"
@@ -135,10 +153,14 @@ export default function PlanPage() {
           </Button>
           <Button
             variant="light"
+            visibleFrom="sm"
             rightSection={<IconChevronRight size={16} />}
             onClick={() => nav(1)}
           >
             Weiter
+          </Button>
+          <Button variant="light" hiddenFrom="sm" onClick={() => nav(1)}>
+            <IconChevronRight size={16} />
           </Button>
         </Group>
       </Group>

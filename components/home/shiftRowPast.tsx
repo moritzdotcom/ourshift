@@ -1,5 +1,5 @@
 import { ChangeStatus } from '@/generated/prisma';
-import { timeToHuman } from '@/lib/dates';
+import { minutesBetween, timeToHuman } from '@/lib/dates';
 import { MyShift } from '@/pages';
 import { Card, Button, Text } from '@mantine/core';
 import {
@@ -18,9 +18,6 @@ function fmtDate(s: string | Date) {
     month: '2-digit',
     year: '2-digit',
   });
-}
-function minutesBetween(a: Date, b: Date) {
-  return Math.max(0, Math.round((b.getTime() - a.getTime()) / 60000));
 }
 function hhmm(min: number) {
   const h = Math.floor(min / 60);

@@ -89,3 +89,10 @@ export function mergeDateAndMinutes(
   const local = new Date(y, m, day, hh, mm, 0, 0);
   return local.toISOString();
 }
+
+export function minutesBetween(a: string | Date, b: string | Date) {
+  return Math.max(
+    0,
+    Math.round((new Date(b).getTime() - new Date(a).getTime()) / 60000)
+  );
+}
