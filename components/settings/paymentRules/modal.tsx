@@ -10,12 +10,14 @@ import {
   Alert,
   Select,
   Text,
+  Divider,
 } from '@mantine/core';
 import { IconInfoCircle } from '@tabler/icons-react';
 import { hhmmToMin, minToHHMM, WEEKDAY_OPTIONS } from '@/lib/dates';
 import axios from 'axios';
 import { ApiGetPayRulesResponse } from '@/pages/api/payRules';
 import { showSuccess } from '@/lib/toast';
+import { PAY_RULE_PRESETS, PayRulePreset } from '@/lib/payRule';
 
 type UserOption = { id: string; firstName: string; lastName: string };
 
@@ -110,6 +112,16 @@ export default function RuleModal({
     return null;
   }, [userId, userLocked]);
 
+  function handlePresetSelect(preset?: PayRulePreset) {
+    setName(preset?.name || '');
+    setStart(minToHHMM(preset?.windowStartMin ?? null));
+    setEnd(minToHHMM(preset?.windowEndMin ?? null));
+    setDays(preset?.daysOfWeek?.map(String) || []);
+    setHolidayOnly(preset?.holidayOnly || false);
+    setExcludeHolidays(preset?.excludeHolidays || false);
+    setPercent(preset?.percent || '');
+  }
+
   async function handleSubmit() {
     if (dateError || userError) return;
     setLoading(true);
@@ -196,6 +208,8 @@ export default function RuleModal({
             withAsterisk
           />
         )}
+
+        {mode === 'create' && <PresetSelection onSelect={handlePresetSelect} />}
 
         <TextInput
           label="Name"
@@ -312,5 +326,34 @@ export default function RuleModal({
         </Button>
       </Group>
     </Modal>
+  );
+}
+
+function PresetSelection({
+  onSelect,
+}: {
+  onSelect: (preset?: PayRulePreset) => void;
+}) {
+  const [preset, setPreset] = useState<PayRulePreset>();
+
+  const handleChange = (id: string | null) => {
+    const pre = PAY_RULE_PRESETS.find((p) => p.id === id);
+    setPreset(pre);
+    onSelect(pre);
+  };
+
+  return (
+    <div className="md:col-span-2 flex flex-col gap-3">
+      <Select
+        value={preset?.id}
+        data={PAY_RULE_PRESETS.map((p) => ({
+          value: p.id,
+          label: p.name,
+        }))}
+        placeholder="Vorlage auswählen"
+        onChange={handleChange}
+      />
+      <Divider />
+    </div>
   );
 }
