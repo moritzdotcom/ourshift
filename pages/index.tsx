@@ -29,6 +29,7 @@ import HomeCurrentShift from '@/components/home/currentShift';
 import ManagementEntryButton from '@/components/home/managementEntryButton';
 import { hasRole } from '@/lib/auth';
 import HtmlHead from '@/components/htmlHead';
+import TakeoverShiftList from '@/components/home/takeoverShiftList';
 
 export type MyShift = ApiMyShiftResponse['shifts'][number];
 
@@ -166,6 +167,10 @@ export default function HomePage() {
     );
   }
 
+  function handleTakeover(takeover: MyShift) {
+    setShifts((prev) => [takeover, ...prev]);
+  }
+
   function loadMore() {
     setPastShiftsSlice((prev) => Math.min(prev + 4, pastEarlier.length));
   }
@@ -263,6 +268,8 @@ export default function HomePage() {
               )
             }
           />
+
+          {!current && <TakeoverShiftList onTakeover={handleTakeover} />}
 
           {/* Fehlerhinweis */}
           {err && (

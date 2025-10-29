@@ -3,7 +3,6 @@ import { timeToHuman } from '@/lib/dates';
 import { showError, showSuccess } from '@/lib/toast';
 import { MyShift } from '@/pages';
 import { Card, Group, Badge, Button } from '@mantine/core';
-import { IconChevronRight } from '@tabler/icons-react';
 import ShiftCodeBadge from '../shiftCodes/badge';
 
 function fmtDate(s: string | Date) {

@@ -12,7 +12,7 @@ export default function useKioskData() {
     axios.get<KioskShift[]>('/api/kiosk/shift').then((res) => res.data);
 
   const { data, mutate } = useSWR<KioskShift[]>('/api/kiosk/shift', fetcher, {
-    refreshInterval: 10_000,
+    refreshInterval: 5 * 60_000,
   });
 
   /**
