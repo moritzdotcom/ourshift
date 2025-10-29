@@ -25,3 +25,9 @@
 .shift-code-slate{ 
   @apply bg-slate-200 text-slate-900
 }
+.shift-code-stone{
+  @apply bg-stone-900 text-stone-50
+}
+.shift-code-night{
+  @apply bg-blue-900 text-blue-50
+}

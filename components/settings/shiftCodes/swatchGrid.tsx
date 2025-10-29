@@ -17,6 +17,8 @@ export default function SwatchGrid({
     'indigo',
     'cyan',
     'slate',
+    'stone',
+    'night',
   ];
 
   return (
