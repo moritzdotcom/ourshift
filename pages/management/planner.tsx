@@ -14,7 +14,7 @@ import PlannerToolbar from '@/components/planner/toolbar';
 import PlannerLegend from '@/components/planner/legend';
 import PlannerSaveModal from '@/components/planner/saveModal';
 import PlannerGridMonth from '@/components/planner/grid';
-import PlannerBottomBar from '@/components/planner/bottomBar';
+import PlannerTimeSelection from '@/components/planner/timeSelection';
 
 import { usePlanData } from '@/hooks/usePlanData';
 import { useUnsavedGuard } from '@/hooks/useUnsavedGuard';
@@ -180,10 +180,7 @@ export default function PlanPage() {
     <ManagementLayout>
       <div className="min-h-screen w-full py-6 px-3">
         <div className="mx-auto space-y-4">
-          <PlannerToolbar
-            shiftCodes={shiftCodes}
-            activeCode={activeCode}
-            setActiveCode={setActiveCode}
+          <PlannerTimeSelection
             startYear={startYear}
             startMonth={startMonth}
             numMonths={numMonths}
@@ -215,10 +212,16 @@ export default function PlanPage() {
               );
             })}
           </div>
-
-          <PlannerBottomBar unsavedCount={unsaved.length} onSave={handleSave} />
         </div>
       </div>
+
+      <PlannerToolbar
+        shiftCodes={shiftCodes}
+        activeCode={activeCode}
+        setActiveCode={setActiveCode}
+        unsavedCount={unsaved.length}
+        onSave={handleSave}
+      />
 
       <PlannerSaveModal
         opened={confirmLeaveOpen}

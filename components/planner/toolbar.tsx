@@ -1,30 +1,123 @@
 import { ShiftCode } from '@/generated/prisma';
-import { Select } from '@mantine/core';
 import { HotkeyItem, useHotkeys } from '@mantine/hooks';
-import { IconArrowBigLeft, IconArrowBigRight } from '@tabler/icons-react';
+import { IconBackspace } from '@tabler/icons-react';
+import { useState } from 'react';
 
 export default function PlannerToolbar({
   shiftCodes,
   activeCode,
   setActiveCode,
-  startYear,
-  startMonth,
-  numMonths,
-  setStartYear,
-  setStartMonth,
-  setNumMonths,
+  unsavedCount,
+  onSave,
 }: {
   shiftCodes: ShiftCode[];
   activeCode: ShiftCode | '' | 'K' | 'U';
   setActiveCode: (code: ShiftCode | '' | 'K' | 'U') => void;
-  startYear: number;
-  startMonth: number;
-  numMonths: number;
-  setStartYear: (val: number) => void;
-  setStartMonth: (val: number) => void;
-  setNumMonths: (val: number) => void;
+  unsavedCount: number;
+  onSave: () => void;
 }) {
-  // Hotkeys (1..n = Codes, n+1 = löschen)
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <>
+      {/* Desktop Dock */}
+      <PlannerToolbarDock>
+        <PlannerToolbarContent
+          shiftCodes={shiftCodes}
+          activeCode={activeCode}
+          setActiveCode={setActiveCode}
+          unsavedCount={unsavedCount}
+          onSave={onSave}
+        />
+      </PlannerToolbarDock>
+
+      {/* Mobile FAB */}
+      <PlannerFab onClick={() => setMobileOpen(true)} />
+
+      {/* Mobile Sheet */}
+      <PlannerMobileSheet
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+      >
+        <PlannerToolbarContent
+          shiftCodes={shiftCodes}
+          activeCode={activeCode}
+          setActiveCode={(code) => {
+            setActiveCode(code);
+            setMobileOpen(false);
+          }}
+          unsavedCount={unsavedCount}
+          onSave={onSave}
+        />
+      </PlannerMobileSheet>
+    </>
+  );
+}
+
+function PlannerToolbarDock({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="hidden w-9/12 md:flex fixed bottom-4 left-1/2 -translate-x-1/2 bg-white border border-slate-400 shadow-xl rounded-lg px-4 py-3 z-40 items-center gap-4">
+      {children}
+    </div>
+  );
+}
+
+function PlannerFab({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      className="md:hidden fixed bottom-4 right-4 bg-slate-900 text-white rounded-full shadow-xl w-14 h-14 flex items-center justify-center text-lg font-semibold z-40"
+      onClick={onClick}
+    >
+      ☰
+    </button>
+  );
+}
+
+function PlannerMobileSheet({
+  open,
+  onClose,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  if (!open) return null;
+  return (
+    <div className="md:hidden fixed inset-0 z-50 flex flex-col">
+      {/* halbtransparentes Backdrop */}
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+
+      {/* das eigentliche Panel unten */}
+      <div className="relative mt-auto bg-white rounded-t-xl shadow-xl p-4 max-h-[70vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-sm font-medium text-slate-700">
+            Planer-Aktionen
+          </div>
+          <button className="text-slate-500 text-sm" onClick={onClose}>
+            Schließen
+          </button>
+        </div>
+
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function PlannerToolbarContent({
+  shiftCodes,
+  activeCode,
+  setActiveCode,
+  unsavedCount,
+  onSave,
+}: {
+  shiftCodes: ShiftCode[];
+  activeCode: ShiftCode | '' | 'K' | 'U';
+  setActiveCode: (code: ShiftCode | '' | 'K' | 'U') => void;
+  unsavedCount: number;
+  onSave: () => void;
+}) {
   useHotkeys(
     [
       ...shiftCodes
@@ -49,78 +142,30 @@ export default function PlannerToolbar({
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="flex items-center gap-4 rounded shadow p-1 bg-white border">
-        <button
-          className="hover:text-slate-300 text-xl cursor-pointer"
-          onClick={() => {
-            const d = new Date(startYear, startMonth - 1, 1);
-            setStartYear(d.getFullYear());
-            setStartMonth(d.getMonth());
-          }}
-        >
-          <IconArrowBigLeft />
-        </button>
-        <div className="text-xl">
-          {new Date(startYear, startMonth, 1).toLocaleDateString('de', {
-            month: 'long',
-            year: 'numeric',
-          })}
-        </div>
-        <button
-          className="hover:text-slate-300 text-xl cursor-pointer"
-          onClick={() => {
-            const d = new Date(startYear, startMonth + 1, 1);
-            setStartYear(d.getFullYear());
-            setStartMonth(d.getMonth());
-          }}
-        >
-          <IconArrowBigRight />
-        </button>
-      </div>
-      <Select
-        styles={{
-          input: {
-            border: '1px solid #000',
-            borderRadius: '5px',
-          },
-        }}
-        value={numMonths.toString()}
-        onChange={(_, opt) => setNumMonths(parseInt(opt.value || '1'))}
-        data={[
-          { value: '1', label: '1 Monat' },
-          { value: '2', label: '2 Monate' },
-          { value: '3', label: '3 Monate' },
-          { value: '6', label: '6 Monate' },
-          { value: '12', label: '1 Jahr' },
-        ]}
-      />
-
+    <div className="w-full flex flex-col sm:flex-row gap-5 items-center justify-between">
       {/* Quick palette */}
       <div className="flex items-center gap-2">
         {shiftCodes
           .sort((a, b) => a.sortOrder - b.sortOrder)
-          .map((c, idx) => {
-            return (
-              <button
-                key={c.id}
-                className={`px-3 py-1.5 rounded-xl border shadow-sm shift-code-${
-                  c.color
-                } ${
-                  isActive(c) ? 'ring-2 ring-slate-700 animate-ping-return' : ''
-                }`}
-                onClick={() => setActiveCode(c)}
-                title={`${c.code} - ${c.label}`}
-              >
-                <div className="flex flex-col gap-1 items-center">
-                  <p>{c.code}</p>
-                  <div className="bg-slate-100 border border-slate-400 w-6 h-6 flex items-center justify-center rounded-md text-sm text-slate-800">
-                    {idx + 1}
-                  </div>
+          .map((c, idx) => (
+            <button
+              key={c.id}
+              className={`px-3 py-1.5 rounded-xl border shadow-sm shift-code-${
+                c.color
+              } ${
+                isActive(c) ? 'ring-2 ring-slate-700 animate-ping-return' : ''
+              }`}
+              onClick={() => setActiveCode(c)}
+              title={`${c.code} - ${c.label}`}
+            >
+              <div className="flex flex-col gap-1 items-center">
+                <p>{c.code}</p>
+                <div className="bg-slate-100 border border-slate-400 w-6 h-6 flex items-center justify-center rounded-md text-sm text-slate-800">
+                  {idx + 1}
                 </div>
-              </button>
-            );
-          })}
+              </div>
+            </button>
+          ))}
 
         <button
           className={`px-3 py-1.5 rounded-xl border shadow-sm bg-rose-100 text-rose-800 ${
@@ -157,13 +202,29 @@ export default function PlannerToolbar({
           onClick={() => setActiveCode('')}
         >
           <div className="flex flex-col gap-1 items-center">
-            <p>Leer</p>
+            <IconBackspace fontWeight={100} />
             <div className="bg-slate-100 border border-slate-400 w-6 h-6 flex items-center justify-center rounded-md text-sm text-slate-800">
               {shiftCodes.length + 3}
             </div>
           </div>
         </button>
       </div>
+
+      <button
+        className={`relative px-4 py-2 rounded-xl ${
+          unsavedCount
+            ? 'bg-sky-600 text-white save-attention'
+            : 'bg-slate-900 text-white'
+        }`}
+        onClick={onSave}
+      >
+        Speichern
+        {unsavedCount > 0 && (
+          <span className="absolute -top-2 -right-2 bg-white text-sky-700 text-xs font-semibold rounded-full px-1.5 py-0.5 border">
+            {unsavedCount}
+          </span>
+        )}
+      </button>
     </div>
   );
 }
