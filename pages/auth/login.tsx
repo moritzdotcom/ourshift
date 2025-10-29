@@ -13,6 +13,7 @@ import {
   Center,
 } from '@mantine/core';
 import axios from 'axios';
+import HtmlHead from '@/components/htmlHead';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -48,6 +49,7 @@ export default function LoginPage() {
         padding: '1rem',
       }}
     >
+      <HtmlHead />
       <Card withBorder radius="lg" p="xl" className="w-full max-w-md bg-white">
         <div className="flex flex-col items-center gap-2 mb-6">
           <div className="w-2/3 mb-5">

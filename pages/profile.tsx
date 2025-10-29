@@ -14,6 +14,7 @@ import {
 } from '@mantine/core';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { IconHome } from '@tabler/icons-react';
+import HtmlHead from '@/components/htmlHead';
 
 export default function ProfilePage() {
   const { user, update, logout, updateCredentials } = useCurrentUser();
@@ -137,6 +138,7 @@ export default function ProfilePage() {
         gap: '2rem',
       }}
     >
+      <HtmlHead title="OurShift - Dein Profil" />
       {/* Header-Bereich */}
       <Group justify="space-between">
         <div>

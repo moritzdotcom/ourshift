@@ -25,6 +25,7 @@ import { Role } from '@/generated/prisma';
 import axios from 'axios';
 import useSWR from 'swr';
 import { KioskStartDialog } from '@/components/kiosk/startModal';
+import HtmlHead from '@/components/htmlHead';
 
 export default function ManagementLayout({
   children,
@@ -88,6 +89,7 @@ export default function ManagementLayout({
       }}
       padding={0}
     >
+      <HtmlHead title="OurShift - Management Console" />
       {/* HEADER */}
       <AppShell.Header className="flex items-center justify-between px-4 border-b bg-white/90 backdrop-blur">
         <Group gap="xs">

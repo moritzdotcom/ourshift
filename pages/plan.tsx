@@ -22,6 +22,7 @@ import {
 } from '@/lib/plan';
 import { MyShift } from '.';
 import Link from 'next/link';
+import HtmlHead from '@/components/htmlHead';
 
 const fetcher = (url: string) => axios.get(url).then((r) => r.data);
 
@@ -101,6 +102,7 @@ export default function PlanPage() {
 
   return (
     <div className="p-6 space-y-6">
+      <HtmlHead title="Dein Schichtplan" />
       <Link href="/">
         <Button
           leftSection={<IconHome size={15} />}

@@ -1,3 +1,4 @@
+import HtmlHead from '@/components/htmlHead';
 import KioskPinModal from '@/components/kiosk/pinModal';
 import KioskShiftCard from '@/components/kiosk/shiftCard';
 import { KioskStopModal } from '@/components/kiosk/stopModal';
@@ -94,6 +95,7 @@ export default function KioskPage() {
         boxSizing: 'border-box',
       }}
     >
+      <HtmlHead title="OurShift Kiosk" />
       <Box
         style={{
           position: 'absolute',

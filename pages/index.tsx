@@ -28,6 +28,7 @@ import ShiftRowPast from '@/components/home/shiftRowPast';
 import HomeCurrentShift from '@/components/home/currentShift';
 import ManagementEntryButton from '@/components/home/managementEntryButton';
 import { hasRole } from '@/lib/auth';
+import HtmlHead from '@/components/htmlHead';
 
 export type MyShift = ApiMyShiftResponse['shifts'][number];
 
@@ -198,6 +199,7 @@ export default function HomePage() {
   return (
     <AppShell padding={0}>
       <AppShell.Main className="min-h-screen bg-gray-50">
+        <HtmlHead />
         {/* Header */}
         <div className="px-4 sm:px-6 pt-6 pb-4">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
