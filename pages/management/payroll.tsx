@@ -63,6 +63,7 @@ export default function PayrollPage() {
               value={`${year}-${month}`}
               data={Array.from({ length: 24 }).map((_, i) => {
                 const d = new Date();
+                d.setDate(15);
                 d.setMonth(d.getMonth() - i);
                 return {
                   value: `${d.getFullYear()}-${d.getMonth()}`,

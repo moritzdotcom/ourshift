@@ -99,6 +99,32 @@ function ruleActiveOnDay(
   return t >= from && t <= until;
 }
 
+function calculateBonus(
+  monthIndex: number,
+  contract: {
+    salaryMonthlyCents: number | null;
+    vacationBonus: number | null;
+    christmasBonus: number | null;
+  } | null
+) {
+  if (contract && contract.salaryMonthlyCents) {
+    if (monthIndex === 5 && contract.vacationBonus) {
+      return {
+        name: 'Urlaubsgeld',
+        amountCents:
+          (contract.salaryMonthlyCents * contract.vacationBonus) / 100,
+      };
+    }
+    if (monthIndex === 11 && contract.christmasBonus) {
+      return {
+        name: 'Weihnachtsgeld',
+        amountCents:
+          (contract.salaryMonthlyCents * contract.christmasBonus) / 100,
+      };
+    }
+  }
+}
+
 export type PayrollRow = {
   userId: string;
   userName: string;
@@ -115,6 +141,12 @@ export type PayrollRow = {
   }[];
   supplementsTotalCents: number;
   grossCents: number;
+  bonus:
+    | {
+        name: string;
+        amountCents: number;
+      }
+    | undefined;
 };
 
 export function buildPayrollForMonth({
@@ -201,6 +233,8 @@ export function buildPayrollForMonth({
       }
     }
 
+    const bonus = calculateBonus(monthIndex, contract);
+
     const supplements = [...suppMap.entries()].map(([ruleId, v]) => ({
       ruleId,
       name: v.name,
@@ -215,7 +249,11 @@ export function buildPayrollForMonth({
       hourly != null && !fixedSalary
         ? Math.round((totalMinutes / 60) * hourly)
         : 0;
-    const gross = (fixedSalary || 0) + baseFromHours + supplementsTotal;
+    const gross =
+      (fixedSalary || 0) +
+      baseFromHours +
+      supplementsTotal +
+      (bonus?.amountCents || 0);
     rows.push({
       userId: u.id,
       userName: `${u.firstName} ${u.lastName}`,
@@ -226,6 +264,7 @@ export function buildPayrollForMonth({
       supplementsByRule: supplements,
       supplementsTotalCents: supplementsTotal,
       grossCents: gross,
+      bonus,
     });
   }
 
@@ -233,12 +272,14 @@ export function buildPayrollForMonth({
 }
 
 export function downloadCSV(filename: string, rows: PayrollRow[]) {
+  const bonusName = rows.find((r) => r.bonus)?.bonus?.name;
   const header = [
     'Mitarbeiter',
     'Gesamtstunden',
     'Grundgehalt (Monat)',
     'Grundvergütung (Std * Satz)',
     'Zuschläge (Summe)',
+    `${bonusName || 'Sonstige Bonuszahlungen'} (Summe)`,
     'Brutto gesamt',
   ];
   const lines = [header.join(';')];
@@ -251,6 +292,7 @@ export function downloadCSV(filename: string, rows: PayrollRow[]) {
         (r.baseSalaryCents / 100).toFixed(2).replace('.', ','),
         (r.baseFromHoursCents / 100).toFixed(2).replace('.', ','),
         (r.supplementsTotalCents / 100).toFixed(2).replace('.', ','),
+        ((r.bonus?.amountCents || 0) / 100).toFixed(2).replace('.', ','),
         (r.grossCents / 100).toFixed(2).replace('.', ','),
       ].join(';')
     );

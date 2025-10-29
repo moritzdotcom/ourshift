@@ -55,6 +55,7 @@ export default function PayrollTable({
               <Table.Th>Basis-Stundensatz</Table.Th>
               <Table.Th>Gesamtstunden</Table.Th>
               <Table.Th>Zuschläge</Table.Th>
+              <Table.Th>Urlaubs- /Weihnachtsgeld</Table.Th>
               <Table.Th>Brutto gesamt</Table.Th>
             </Table.Tr>
           </Table.Thead>
@@ -75,6 +76,7 @@ export default function PayrollTable({
                   </Table.Td>
                   <Table.Td>{(r.monthMinutes / 60).toFixed(1)} h</Table.Td>
                   <Table.Td>{Euro(r.supplementsTotalCents)}</Table.Td>
+                  <Table.Td>{Euro(r.bonus?.amountCents)}</Table.Td>
                   <Table.Td className="font-semibold">
                     {Euro(r.grossCents)}
                   </Table.Td>

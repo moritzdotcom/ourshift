@@ -65,6 +65,8 @@ export async function kpiGetUsers() {
           hourlyRateCents: true,
           vacationDaysAnnual: true,
           weeklyHours: true,
+          vacationBonus: true,
+          christmasBonus: true,
         },
       },
       payRules: {
