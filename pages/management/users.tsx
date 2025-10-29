@@ -32,10 +32,9 @@ export default function UsersContracts() {
     <ManagementLayout>
       <div className="h-[calc(100vh-56px)] flex flex-col md:flex-row overflow-hidden">
         <div
-          className={`
-            md:block md:w-80 md:shrink-0
-            ${sidebarOpen ? 'block' : 'hidden'}
-            w-full h-full overflow-y-auto`}
+          className={`md:block md:w-80 md:shrink-0 ${
+            sidebarOpen ? 'block' : 'hidden'
+          } w-full h-full overflow-y-auto`}
         >
           <DigitalContractsSidebar
             users={users}
@@ -46,11 +45,9 @@ export default function UsersContracts() {
         </div>
 
         <div
-          className={`
-            flex-1 overflow-y-auto
-            ${sidebarOpen ? 'hidden md:block' : 'block'}
-            bg-white
-          `}
+          className={`flex-1 overflow-y-auto ${
+            sidebarOpen ? 'hidden md:block' : 'block'
+          } bg-white`}
         >
           <div className="md:hidden border-b border-gray-200 p-3 bg-slate-100 sticky top-0 z-100">
             <Group gap="sm" justify="space-between" wrap="nowrap">
@@ -89,7 +86,7 @@ export default function UsersContracts() {
             </Group>
           </div>
 
-          <div className="p-4 md:p-6 bg-slate-50">
+          <div className="p-4 md:p-6 bg-slate-50 min-h-full">
             <ActiveUserSection activeUser={activeUser} setUsers={setUsers} />
           </div>
         </div>
