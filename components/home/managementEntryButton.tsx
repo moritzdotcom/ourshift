@@ -37,7 +37,6 @@ export default function ManagementEntryButton() {
         <Button
           variant="light"
           color="orange"
-          radius="md"
           leftSection={<IconSettings size={16} stroke={1.5} />}
           styles={{
             root: { fontWeight: 500 },

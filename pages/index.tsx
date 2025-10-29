@@ -202,7 +202,7 @@ export default function HomePage() {
         <HtmlHead />
         {/* Header */}
         <div className="px-4 sm:px-6 pt-6 pb-4">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
             <div className="flex items-center gap-3">
               <Image
                 src="/icon.png"
@@ -225,12 +225,12 @@ export default function HomePage() {
                 </Text>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {hasRole(user, 'MANAGER') && <ManagementEntryButton />}
+            <div className="flex flex-wrap gap-3 md:justify-end">
               <Link href="/plan">
                 <Button
                   variant="light"
                   leftSection={<IconCalendarEvent size={16} />}
+                  fullWidth
                 >
                   Dein Schichtplan
                 </Button>
@@ -240,10 +240,12 @@ export default function HomePage() {
                   variant="light"
                   color="grape"
                   leftSection={<IconUserSquare size={16} />}
+                  fullWidth
                 >
                   Dein Profil
                 </Button>
               </Link>
+              {hasRole(user, 'MANAGER') && <ManagementEntryButton />}
             </div>
           </div>
         </div>
