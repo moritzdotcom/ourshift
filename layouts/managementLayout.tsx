@@ -6,6 +6,7 @@ import {
   ActionIcon,
   Text,
   Badge,
+  Button,
 } from '@mantine/core';
 import {
   IconCalendar,
@@ -16,6 +17,7 @@ import {
   IconMenu2,
   IconChevronLeft,
   IconCoins,
+  IconDoorExit,
 } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
@@ -120,7 +122,7 @@ export default function ManagementLayout({
               .map((l) => {
                 const active = router.pathname.startsWith(l.href);
                 return (
-                  <div key={l.href} className="relative">
+                  <div key={l.href} className="relative ml-3">
                     <NavLink
                       key={l.href}
                       component="button"
@@ -132,7 +134,7 @@ export default function ManagementLayout({
                       leftSection={<l.icon size={25} />}
                       label={collapsed ? null : l.label}
                       classNames={{
-                        root: `transition-all rounded-md mx-2 my-2 ${
+                        root: `transition-all rounded-l-md my-2 ${
                           active
                             ? 'bg-blue-100 text-blue-800'
                             : 'hover:bg-gray-50'
@@ -161,6 +163,40 @@ export default function ManagementLayout({
               })}
           </div>
         </ScrollArea>
+        {collapsed ? (
+          <ActionIcon
+            component="button"
+            onClick={() => {
+              setCollapsed(true);
+              router.push('/');
+            }}
+            variant="light"
+            color="red"
+            size="input-md"
+            classNames={{
+              root: `transition-all rounded-md mx-2 my-2`,
+            }}
+          >
+            <IconDoorExit size={25} />
+          </ActionIcon>
+        ) : (
+          <Button
+            component="button"
+            onClick={() => {
+              setCollapsed(true);
+              router.push('/');
+            }}
+            variant="light"
+            color="red"
+            leftSection={<IconDoorExit size={25} />}
+            classNames={{
+              root: `transition-all rounded-md mx-2 my-2`,
+              label: 'text-sm font-medium',
+            }}
+          >
+            Console Verlassen
+          </Button>
+        )}
       </AppShell.Navbar>
 
       {/* MAIN CONTENT */}
