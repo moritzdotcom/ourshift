@@ -9,10 +9,6 @@ export default async function handle(
     where: { clockInSource: 'MANUAL' },
   });
 
-  const other = await prisma.shift.findMany({
-    where: { clockInSource: null },
-  });
-
   const updated = await prisma.$transaction(
     shifts.map((s) =>
       prisma.shift.update({
@@ -27,16 +23,5 @@ export default async function handle(
     )
   );
 
-  const oUpdated = await prisma.$transaction(
-    shifts.map((s) =>
-      prisma.shift.update({
-        where: { id: s.id },
-        data: {
-          clockIn: null,
-          clockOut: null,
-        },
-      })
-    )
-  );
   return res.status(200).json(updated);
 }
