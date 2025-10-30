@@ -17,7 +17,8 @@ export default async function handler(
   if (!currentSession)
     return res.status(401).json({ error: 'Not Authenticated' });
 
-  const pinHash = await hashPin(pin);
+  const { ok: pinOk, hash: pinHash, error: pinError } = await hashPin(pin);
+  if (!pinOk) return res.status(400).json({ error: pinError });
 
   // 5. setze Cookies
   res.setHeader('Set-Cookie', [

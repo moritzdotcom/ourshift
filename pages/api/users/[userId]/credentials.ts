@@ -1,5 +1,5 @@
 import { authGuard } from '@/lib/auth';
-import { hashPassword } from '@/lib/password';
+import { hashPassword, hashPin } from '@/lib/password';
 import prisma from '@/lib/prismadb';
 import { NextApiRequest, NextApiResponse } from 'next';
 
@@ -31,7 +31,9 @@ async function handlePOST(
   const { password, pin } = req.body;
 
   if (typeof password === 'string') {
-    const passwordHash = await hashPassword(password);
+    const { ok, hash: passwordHash, error } = await hashPassword(password);
+    if (!ok) return res.status(400).json({ error });
+
     await prisma.userCredential.upsert({
       where: { userId: id },
       update: { passwordHash },
@@ -40,7 +42,9 @@ async function handlePOST(
   }
 
   if (typeof pin === 'string') {
-    const pinHash = await hashPassword(pin);
+    const { ok, hash: pinHash, error } = await hashPin(pin);
+    if (!ok) return res.status(400).json({ error });
+
     const pinLength = pin.length;
     await prisma.kioskCredential.upsert({
       where: { userId: id },

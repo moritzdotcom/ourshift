@@ -177,7 +177,7 @@ async function handlePOST(req: NextApiRequest, res: NextApiResponse) {
       where: { id: shiftId },
       data: {
         clockIn: new Date(),
-        clockOutSource: 'KIOSK',
+        clockInSource: 'KIOSK',
       },
       select: {
         id: true,

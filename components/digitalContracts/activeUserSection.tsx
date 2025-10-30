@@ -20,7 +20,7 @@ import {
   IconPhone,
 } from '@tabler/icons-react';
 import { useMemo, Dispatch, SetStateAction, useState } from 'react';
-import axios from 'axios';
+import axios, { isAxiosError } from 'axios';
 import { dateSortDesc, dateToHuman } from '@/lib/dates';
 import UserModal from '@/components/digitalContracts/userModal';
 import { DigitalContract, User } from '@/generated/prisma';
@@ -28,7 +28,8 @@ import { ApiGetUsersResponse } from '@/pages/api/users';
 import ContractModal from '@/components/digitalContracts/contractModal';
 import ContractItem from './contractItem';
 import PayRulesSection from './payRulesSection';
-import { showSuccess } from '@/lib/toast';
+import { showError, showSuccess } from '@/lib/toast';
+import { axiosErrorToString } from '@/lib/error';
 
 export default function ActiveUserSection({
   activeUser,
@@ -80,10 +81,19 @@ export default function ActiveUserSection({
     }
   ) {
     if (!user.id) return;
-    const { data } = await axios.put<User>(`/api/users/${user.id}`, user);
-    setUsers((us) => us.map((u) => (u.id === data.id ? { ...u, ...data } : u)));
-    showSuccess('Änderungen gespeichert');
-    closeUserModal();
+
+    try {
+      const { data } = await axios.put<User>(`/api/users/${user.id}`, user);
+      setUsers((us) =>
+        us.map((u) => (u.id === data.id ? { ...u, ...data } : u))
+      );
+      showSuccess('Änderungen gespeichert');
+      closeUserModal();
+    } catch (error) {
+      if (isAxiosError(error)) {
+        showError(axiosErrorToString(error));
+      }
+    }
   }
 
   // --------- CONTRACT CREATE / EDIT ----------

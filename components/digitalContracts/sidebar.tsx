@@ -93,7 +93,7 @@ export default function DigitalContractsSidebar({
           </Stack>
         </ScrollArea>
 
-        <Button leftSection={<IconPlus size={16} />} onClick={open}>
+        <Button leftSection={<IconPlus size={16} />} onClick={open} mb="xs">
           Neuer Mitarbeiter
         </Button>
 

@@ -60,7 +60,9 @@ async function handlePUT(
   });
 
   if (typeof password === 'string') {
-    const passwordHash = await hashPassword(password);
+    const { ok, hash: passwordHash, error } = await hashPassword(password);
+    if (!ok) return res.status(400).json({ error });
+
     await prisma.userCredential.upsert({
       where: { userId: id },
       update: { passwordHash },
@@ -69,7 +71,9 @@ async function handlePUT(
   }
 
   if (typeof kioskPin === 'string') {
-    const pinHash = await hashPin(kioskPin);
+    const { ok, hash: pinHash, error } = await hashPin(kioskPin);
+    if (!ok) return res.status(400).json({ error });
+
     const pinLength = kioskPin.length;
     await prisma.kioskCredential.upsert({
       where: { userId: id },

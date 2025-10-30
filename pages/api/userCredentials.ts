@@ -41,7 +41,12 @@ async function handlePUT(req: NextApiRequest, res: NextApiResponse) {
         .json({ error: 'No password set for this user account' });
     }
 
-    const newPasswordHash = await hashPassword(newPassword);
+    const {
+      ok,
+      hash: newPasswordHash,
+      error,
+    } = await hashPassword(newPassword);
+    if (!ok) return res.status(400).json({ error });
     await prisma.userCredential.update({
       where: { userId },
       data: { passwordHash: newPasswordHash },
@@ -49,7 +54,8 @@ async function handlePUT(req: NextApiRequest, res: NextApiResponse) {
   }
 
   if (typeof newPin === 'string') {
-    const newPinHash = await hashPin(newPin);
+    const { ok, hash: newPinHash, error } = await hashPin(newPin);
+    if (!ok) return res.status(400).json({ error });
     const pinLength = newPin.length;
 
     await prisma.kioskCredential.upsert({

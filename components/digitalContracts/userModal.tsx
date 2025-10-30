@@ -105,7 +105,6 @@ export default function UserModal({
     if (kioskPin) payload.kioskPin = kioskPin;
 
     onSave(payload);
-    onClose();
   }
 
   return (

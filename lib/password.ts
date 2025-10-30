@@ -1,4 +1,5 @@
 import argon2 from 'argon2';
+import { failureResp, successResp } from './apiResponse';
 
 const ARGON2_OPTS = {
   type: argon2.argon2id,
@@ -41,11 +42,17 @@ export function validatePinFormat(pin: string): {
 /* ----------------------------- Hash / Verify ------------------------------- */
 
 /** Passwort hashen (Argon2id) */
-export async function hashPassword(password: string): Promise<string> {
+export async function hashPassword(password: string) {
   const pw = normalizePassword(password);
   const policy = validatePasswordStrength(pw);
-  if (!policy.ok) throw new Error(`Ungültiges Passwort: ${policy.message}`);
-  return argon2.hash(pw, ARGON2_OPTS);
+  if (!policy.ok)
+    return failureResp(
+      'hash',
+      undefined,
+      policy.message || 'Ungültiges Passwort'
+    );
+  const hash = await argon2.hash(pw, ARGON2_OPTS);
+  return successResp('hash', hash);
 }
 
 /** Passwort prüfen */
@@ -62,11 +69,13 @@ export async function verifyPassword(
 }
 
 /** PIN hashen (Argon2id + Pepper) */
-export async function hashPin(pin: string): Promise<string> {
+export async function hashPin(pin: string) {
   const v = validatePinFormat(pin);
-  if (!v.ok) throw new Error(`Ungültige PIN: ${v.message}`);
+  if (!v.ok)
+    return failureResp('hash', undefined, v.message || 'Ungültige PIN');
   const input = pin + PIN_PEPPER;
-  return argon2.hash(input, ARGON2_OPTS);
+  const hash = await argon2.hash(input, ARGON2_OPTS);
+  return successResp('hash', hash);
 }
 
 /** PIN prüfen (Argon2id + Pepper) */
