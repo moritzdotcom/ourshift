@@ -139,10 +139,14 @@ export default function PlanPage() {
         ? mergeDateAndMinutes(date, 0) // 00:00 lokaler Tag → UTC
         : mergeDateAndMinutes(date, startMin);
 
+      const endDate =
+        isAllDay || (endMin && startMin && endMin < startMin)
+          ? new Date(yy, mm, dd + 1)
+          : date;
       const endIso = isAllDay
         ? // EXKLUSIVES Ende: nächster Tag 00:00, DST-sicher per Date-Komponenten
-          mergeDateAndMinutes(new Date(yy, mm, dd + 1), 0)
-        : mergeDateAndMinutes(date, endMin);
+          mergeDateAndMinutes(endDate, 0)
+        : mergeDateAndMinutes(endDate, endMin);
 
       toSave.push({
         userId,
