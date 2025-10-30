@@ -19,6 +19,7 @@ import PlannerTimeSelection from '@/components/planner/timeSelection';
 import { usePlanData } from '@/hooks/usePlanData';
 import { useUnsavedGuard } from '@/hooks/useUnsavedGuard';
 import { ApiGetShiftsPlannerResponse } from '../api/shifts/planner';
+import { employedInMonth } from '@/lib/user';
 
 export default function PlanPage() {
   const today = new Date();
@@ -200,7 +201,9 @@ export default function PlanPage() {
                   key={`${year}-${month}`}
                   year={year}
                   month={month}
-                  employees={employees}
+                  employees={employees.filter((e) =>
+                    employedInMonth(e, year, month)
+                  )}
                   holidays={holidays}
                   readCell={readCell}
                   tryWriteCell={tryWriteCell}

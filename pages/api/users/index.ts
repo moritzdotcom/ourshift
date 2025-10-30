@@ -34,6 +34,8 @@ export type ApiGetSimpleUsersResponse = {
   isActive: boolean;
   vacationDays: number;
   vacationDaysTaken: number;
+  employmentStart: Date | null;
+  terminationDate: Date | null;
 }[];
 
 async function handleGET(req: NextApiRequest, res: NextApiResponse) {
@@ -47,6 +49,8 @@ async function handleGET(req: NextApiRequest, res: NextApiResponse) {
         isActive: true,
         _count: { select: { vacationDays: true } },
         contracts: true,
+        employmentStart: true,
+        terminationDate: true,
       },
       orderBy: { firstName: 'asc' },
     });
@@ -55,6 +59,8 @@ async function handleGET(req: NextApiRequest, res: NextApiResponse) {
       firstName: u.firstName,
       lastName: u.lastName,
       isActive: u.isActive,
+      employmentStart: u.employmentStart,
+      terminationDate: u.terminationDate,
       vacationDays:
         pickContractForDate(u.contracts, new Date())?.vacationDaysAnnual || 0,
       vacationDaysTaken: u._count.vacationDays,
@@ -82,8 +88,15 @@ async function handlePOST(req: NextApiRequest, res: NextApiResponse) {
     terminationDate,
   } = req.body;
 
-  const passwordHash = await hashPassword(password);
-  const pinHash = await hashPin(kioskPin);
+  const {
+    ok: passOk,
+    hash: passwordHash,
+    error: passErr,
+  } = await hashPassword(password);
+  if (!passOk) return res.status(400).json({ error: passErr });
+
+  const { ok: pinOk, hash: pinHash, error: pinErr } = await hashPin(kioskPin);
+  if (!pinOk) return res.status(400).json({ error: pinErr });
 
   const created = await prisma.user.create({
     data: {
