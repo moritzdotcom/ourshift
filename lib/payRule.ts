@@ -53,8 +53,8 @@ export const PAY_RULE_PRESETS: Array<PayRulePreset> = [
   {
     id: 'pre-5',
     name: 'Sonntags-Zuschlag',
-    windowStartMin: 1200,
-    windowEndMin: 0,
+    windowStartMin: null,
+    windowEndMin: null,
     daysOfWeek: [0],
     holidayOnly: false,
     excludeHolidays: true,
