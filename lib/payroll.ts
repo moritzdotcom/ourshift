@@ -210,9 +210,9 @@ export function buildPayrollForMonth({
         for (const r of dayRules) {
           const ov = overlapMinutesWithWindow(
             p.fromMin,
-            p.toMin,
+            p.toMin === 0 ? 1440 : p.toMin,
             r.windowStartMin ?? null,
-            r.windowEndMin ?? null
+            r.windowEndMin === 0 ? 1440 : r.windowEndMin ?? null
           );
           if (ov <= 0) continue;
           if (hourly == null || r.percent == null) continue;
