@@ -1,6 +1,7 @@
 import { pickContractForDate } from './digitalContract';
 import { KpiGetHolidays, KpiGetShifts, KpiGetUsers } from './kpiCache';
 import { Decimal } from '@prisma/client/runtime/library';
+import ExcelJS from 'exceljs';
 
 function dayISO(d: Date | string) {
   const x = new Date(d);
@@ -300,6 +301,129 @@ export function downloadCSV(filename: string, rows: PayrollRow[]) {
 
   const blob = new Blob([lines.join('\n')], {
     type: 'text/csv;charset=utf-8;',
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function centsToEuro(n: number | undefined | null) {
+  if (!n) return 0;
+  return n / 100;
+}
+
+function euroFmt(cell: ExcelJS.Cell) {
+  cell.numFmt = '#,##0.00 [$€-407]';
+}
+
+function setHeader(ws: ExcelJS.Worksheet) {
+  ws.columns = [
+    { header: '', key: 'colA', width: 34 }, // Bezeichnung
+    { header: '', key: 'colB', width: 16 }, // Grundlohn/Stunde (€/h)
+    { header: '', key: 'colC', width: 12 }, // Minuten
+    { header: '', key: 'colD', width: 10 }, // Faktor
+    { header: '', key: 'colE', width: 16 }, // Zuschlag/€ Summen
+  ];
+}
+
+function addEmployeeBlock(
+  ws: ExcelJS.Worksheet,
+  startRow: number,
+  row: PayrollRow,
+  isLast: boolean
+) {
+  let r = startRow;
+
+  // Kopfzeile Mitarbeiter
+  ws.getCell(r, 1).value = row.userName;
+  ws.getCell(r, 2).value = 'Grundlohn/Stunde';
+  ws.getCell(r, 3).value = 'Minuten';
+  ws.getCell(r, 4).value = 'Faktor';
+  ws.getCell(r, 5).value = 'Zuschlag';
+  [1, 2, 3, 4, 5].forEach((c) => {
+    ws.getCell(r, c).font = { bold: true };
+    ws.getCell(r, c).border = {
+      bottom: { style: 'thin', color: { argb: '00000000' } },
+    };
+  });
+  r++;
+
+  for (const supp of row.supplementsByRule.sort((a, b) =>
+    a.name.localeCompare(b.name)
+  )) {
+    ws.getCell(r, 1).value = supp.name;
+    ws.getCell(r, 2).value = centsToEuro(row.baseHourlyCents);
+    euroFmt(ws.getCell(r, 2));
+    ws.getCell(r, 3).value = supp.minutes;
+    ws.getCell(r, 3).numFmt = '#,##';
+    ws.getCell(r, 4).value = supp.percent / 100;
+    ws.getCell(r, 4).numFmt = '0%';
+    ws.getCell(r, 5).value = centsToEuro(supp.amountCents);
+    euroFmt(ws.getCell(r, 5));
+    r++;
+  }
+
+  for (let c = 1; c <= 5; c++) {
+    ws.getCell(r - 1, c).border = {
+      bottom: { style: 'thin', color: { argb: '00000000' } },
+    };
+  }
+
+  // Gesamt Zuschlag
+  ws.getCell(r, 1).value = 'Gesamt Zuschlag';
+  ws.getCell(r, 1).font = { bold: true };
+  ws.getCell(r, 5).value = centsToEuro(row.supplementsTotalCents);
+  euroFmt(ws.getCell(r, 5));
+  r += 2;
+
+  // leichte Abgrenzung zum nächsten Block
+  if (isLast) return r;
+  for (let c = 1; c <= 5; c++) {
+    ws.getCell(r, c).border = {
+      bottom: { style: 'thin', color: { argb: '00000000' } },
+    };
+  }
+  r += 2;
+
+  return r; // next start row
+}
+
+export async function downloadPayrollXLSX(
+  filename: string,
+  rows: PayrollRow[],
+  month: string
+) {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Lohnabrechnung');
+
+  setHeader(ws);
+
+  let r = 2;
+  // Optional: Monatskopf
+  ws.getCell(r, 5).value = month;
+  ws.getCell(r, 1).font = { bold: true };
+  r += 2;
+
+  const employeesWithRules = rows.filter((r) => r.supplementsByRule.length > 0);
+
+  employeesWithRules.forEach((emp, i) => {
+    r = addEmployeeBlock(ws, r, emp, i === employeesWithRules.length - 1);
+  });
+
+  // Optik: Standardfont & Zeilenhöhe etwas luftiger
+  ws.eachRow((row) => {
+    row.eachCell((cell) => {
+      cell.font = cell.font ?? {};
+      cell.alignment = { vertical: 'middle' };
+    });
+  });
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

@@ -4,7 +4,7 @@ import { IconDownload, IconCalendar } from '@tabler/icons-react';
 import axios from 'axios';
 import ManagementLayout from '@/layouts/managementLayout';
 import PayrollPDFDocument from '@/components/payroll/payrollPdf';
-import { downloadCSV } from '@/lib/payroll';
+import { downloadCSV, downloadPayrollXLSX } from '@/lib/payroll';
 import PayrollTable from '@/components/payroll/table';
 import PayrollKpiCards from '@/components/payroll/kpiCards';
 import { PayrollPayload } from '@/lib/kpiCache/payroll';
@@ -80,14 +80,18 @@ export default function PayrollPage() {
             <Button
               leftSection={<IconDownload size={16} />}
               onClick={() =>
-                downloadCSV(
-                  `payroll_${year}-${String(month + 1).padStart(2, '0')}.csv`,
-                  payrollPayload || []
+                downloadPayrollXLSX(
+                  `Zuschläge Mitarbeiter ${year}-${String(month + 1).padStart(
+                    2,
+                    '0'
+                  )}.xlsx`,
+                  payrollPayload || [],
+                  monthLabel(year, month)
                 )
               }
               loading={!payrollPayload}
             >
-              CSV exportieren
+              Excel exportieren
             </Button>
           </Group>
         </Group>
