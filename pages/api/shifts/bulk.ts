@@ -68,40 +68,48 @@ async function handlePOST(req: NextApiRequest, res: NextApiResponse) {
     vacationDaysCreated: newVacationDays.length,
   };
 
-  function shiftAbsenceHelper(
-    shift: ApiBulkShiftsRequestBody[number]
-  ): Pick<Prisma.ShiftUpdateInput, 'shiftAbsence'> {
-    if (shift.isSick) {
-      return {
-        shiftAbsence: {
-          upsert: {
-            create: {
-              reason: 'SICKNESS',
-              status: 'APPROVED',
-              userId: shift.userId,
-            },
-            update: { reason: 'SICKNESS', status: 'APPROVED' },
-          },
-        },
-      };
-    } else {
-      return { shiftAbsence: { delete: true } };
-    }
-  }
-
   if (toUpdate.length > 0) {
     await prisma.$transaction(
-      toUpdate.map((shift) => {
-        return prisma.shift.update({
-          where: { id: shift.existingId },
-          data: {
-            userId: shift.userId,
-            codeId: shift.codeId,
-            start: new Date(shift.start),
-            end: new Date(shift.end),
-            ...shiftAbsenceHelper(shift),
-          },
-        });
+      toUpdate.flatMap((shift) => {
+        if (shift.isSick) {
+          return [
+            prisma.shift.update({
+              where: { id: shift.existingId },
+              data: {
+                userId: shift.userId,
+                codeId: shift.codeId,
+                start: new Date(shift.start),
+                end: new Date(shift.end),
+                shiftAbsence: {
+                  upsert: {
+                    create: {
+                      reason: 'SICKNESS',
+                      status: 'APPROVED',
+                      userId: shift.userId,
+                    },
+                    update: { reason: 'SICKNESS', status: 'APPROVED' },
+                  },
+                },
+              },
+            }),
+          ];
+        } else {
+          // erst idempotent löschen (falls vorhanden), dann normal updaten
+          return [
+            prisma.shiftAbsence.deleteMany({
+              where: { shiftId: shift.existingId },
+            }),
+            prisma.shift.update({
+              where: { id: shift.existingId },
+              data: {
+                userId: shift.userId,
+                codeId: shift.codeId,
+                start: new Date(shift.start),
+                end: new Date(shift.end),
+              },
+            }),
+          ];
+        }
       })
     );
   }
