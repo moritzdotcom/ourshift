@@ -23,7 +23,7 @@ export async function fetchPublicHolidays(options: {
   const toParam = dateToISO(typeof to === 'string' ? new Date(to) : to);
 
   const data = await fetch(
-    `https://openholidaysapi.org/PublicHolidays?countryIsoCode=DE&validFrom=${fromParam}&validTo=${toParam}&languageIsoCode=DE&subdivisionCode=DE-NRW`
+    `https://openholidaysapi.org/PublicHolidays?countryIsoCode=DE&validFrom=${fromParam}&validTo=${toParam}&languageIsoCode=DE&subdivisionCode=DE-NW`
   );
   if (!data.ok) {
     throw new Error('Failed to fetch public holidays');
