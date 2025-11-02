@@ -1,6 +1,12 @@
 import { ShiftCode } from '@/generated/prisma';
+import { PlanMode } from '@/hooks/usePlanData';
+import { SegmentedControl, Tooltip } from '@mantine/core';
 import { HotkeyItem, useHotkeys } from '@mantine/hooks';
-import { IconBackspace } from '@tabler/icons-react';
+import {
+  IconBackspace,
+  IconPencilPlus,
+  IconReplace,
+} from '@tabler/icons-react';
 import { useState } from 'react';
 
 export default function PlannerToolbar({
@@ -9,12 +15,16 @@ export default function PlannerToolbar({
   setActiveCode,
   unsavedCount,
   onSave,
+  mode,
+  setMode,
 }: {
   shiftCodes: ShiftCode[];
-  activeCode: ShiftCode | '' | 'K' | 'U';
-  setActiveCode: (code: ShiftCode | '' | 'K' | 'U') => void;
+  activeCode: ShiftCode | 'K' | 'U';
+  setActiveCode: (code: ShiftCode | 'K' | 'U') => void;
   unsavedCount: number;
   onSave: () => void;
+  mode: PlanMode;
+  setMode: (mode: PlanMode) => void;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -28,6 +38,8 @@ export default function PlannerToolbar({
           setActiveCode={setActiveCode}
           unsavedCount={unsavedCount}
           onSave={onSave}
+          mode={mode}
+          setMode={setMode}
         />
       </PlannerToolbarDock>
 
@@ -48,6 +60,8 @@ export default function PlannerToolbar({
           }}
           unsavedCount={unsavedCount}
           onSave={onSave}
+          mode={mode}
+          setMode={setMode}
         />
       </PlannerMobileSheet>
     </>
@@ -111,12 +125,16 @@ function PlannerToolbarContent({
   setActiveCode,
   unsavedCount,
   onSave,
+  mode,
+  setMode,
 }: {
   shiftCodes: ShiftCode[];
-  activeCode: ShiftCode | '' | 'K' | 'U';
-  setActiveCode: (code: ShiftCode | '' | 'K' | 'U') => void;
+  activeCode: ShiftCode | 'K' | 'U';
+  setActiveCode: (code: ShiftCode | 'K' | 'U') => void;
   unsavedCount: number;
   onSave: () => void;
+  mode: PlanMode;
+  setMode: (mode: PlanMode) => void;
 }) {
   useHotkeys(
     [
@@ -125,13 +143,14 @@ function PlannerToolbarContent({
         .map((c, idx) => [(idx + 1).toString(), () => setActiveCode(c)]),
       [(shiftCodes.length + 1).toString(), () => setActiveCode('K')],
       [(shiftCodes.length + 2).toString(), () => setActiveCode('U')],
-      [(shiftCodes.length + 3).toString(), () => setActiveCode('')],
+      ['a', () => setMode('CREATE')],
+      ['s', () => setMode('UPDATE')],
+      ['d', () => setMode('DELETE')],
     ] as HotkeyItem[],
     ['INPUT', 'TEXTAREA']
   );
 
   function isActive(code: ShiftCode | '' | 'K' | 'U') {
-    if (activeCode === '') return code === '';
     if (activeCode === 'K') return code === 'K';
     if (activeCode === 'U') return code === 'U';
     return (
@@ -144,70 +163,100 @@ function PlannerToolbarContent({
   return (
     <div className="w-full flex flex-col sm:flex-row gap-5 items-center justify-between">
       {/* Quick palette */}
+      <SegmentedControl
+        value={mode}
+        onChange={(v) => setMode(v as PlanMode)}
+        radius="md"
+        size="md"
+        data={[
+          {
+            value: 'CREATE',
+            label: (
+              <Tooltip label="Schichten Erstellen">
+                <div className="flex items-center justify-center gap-2 p-2">
+                  <IconPencilPlus size={24} />
+                </div>
+              </Tooltip>
+            ),
+          },
+          {
+            value: 'UPDATE',
+            label: (
+              <Tooltip label="Schichten Bearbeiten">
+                <div className="flex items-center justify-center gap-2 p-2">
+                  <IconReplace size={24} />
+                </div>
+              </Tooltip>
+            ),
+          },
+          {
+            value: 'DELETE',
+            label: (
+              <Tooltip label="Schichten Löschen">
+                <div className="flex items-center justify-center gap-2 p-2">
+                  <IconBackspace size={24} />
+                </div>
+              </Tooltip>
+            ),
+          },
+        ]}
+      />
       <div className="flex items-center gap-2">
         {shiftCodes
           .sort((a, b) => a.sortOrder - b.sortOrder)
           .map((c, idx) => (
-            <button
-              key={c.id}
-              className={`px-3 py-1.5 rounded-xl border shadow-sm shift-code-${
-                c.color
-              } ${
-                isActive(c) ? 'ring-2 ring-slate-700 animate-ping-return' : ''
-              }`}
-              onClick={() => setActiveCode(c)}
-              title={`${c.code} - ${c.label}`}
-            >
-              <div className="flex flex-col gap-1 items-center">
-                <p>{c.code}</p>
-                <div className="bg-slate-100 border border-slate-400 w-6 h-6 flex items-center justify-center rounded-md text-sm text-slate-800">
-                  {idx + 1}
+            <Tooltip label={c.label}>
+              <button
+                key={c.id}
+                className={`px-3 py-1.5 rounded-xl border shadow-sm shift-code-${
+                  c.color
+                } ${
+                  isActive(c) ? 'ring-2 ring-slate-700 animate-ping-return' : ''
+                }`}
+                onClick={() => setActiveCode(c)}
+                title={`${c.code} - ${c.label}`}
+              >
+                <div className="flex flex-col gap-1 items-center">
+                  <p>{c.code}</p>
+                  <div className="bg-slate-100 border border-slate-400 w-6 h-6 flex items-center justify-center rounded-md text-sm text-slate-800">
+                    {idx + 1}
+                  </div>
                 </div>
-              </div>
-            </button>
+              </button>
+            </Tooltip>
           ))}
 
-        <button
-          className={`px-3 py-1.5 rounded-xl border shadow-sm bg-rose-100 text-rose-800 ${
-            isActive('K') ? 'ring-2 ring-slate-700 animate-ping-return' : ''
-          }`}
-          onClick={() => setActiveCode('K')}
-        >
-          <div className="flex flex-col gap-1 items-center">
-            <p>K</p>
-            <div className="bg-slate-100 border border-slate-400 w-6 h-6 flex items-center justify-center rounded-md text-sm text-slate-800">
-              {shiftCodes.length + 1}
+        <Tooltip label="Krankheit ein- / austragen">
+          <button
+            className={`px-3 py-1.5 rounded-xl border shadow-sm bg-rose-100 text-rose-800 ${
+              isActive('K') ? 'ring-2 ring-slate-700 animate-ping-return' : ''
+            }`}
+            onClick={() => setActiveCode('K')}
+          >
+            <div className="flex flex-col gap-1 items-center">
+              <p>K</p>
+              <div className="bg-slate-100 border border-slate-400 w-6 h-6 flex items-center justify-center rounded-md text-sm text-slate-800">
+                {shiftCodes.length + 1}
+              </div>
             </div>
-          </div>
-        </button>
+          </button>
+        </Tooltip>
 
-        <button
-          className={`px-3 py-1.5 rounded-xl border shadow-sm bg-lime-100 text-lime-800 ${
-            isActive('U') ? 'ring-2 ring-slate-700 animate-ping-return' : ''
-          }`}
-          onClick={() => setActiveCode('U')}
-        >
-          <div className="flex flex-col gap-1 items-center">
-            <p>U</p>
-            <div className="bg-slate-100 border border-slate-400 w-6 h-6 flex items-center justify-center rounded-md text-sm text-slate-800">
-              {shiftCodes.length + 2}
+        <Tooltip label="Urlaub eintragen">
+          <button
+            className={`px-3 py-1.5 rounded-xl border shadow-sm bg-lime-100 text-lime-800 ${
+              isActive('U') ? 'ring-2 ring-slate-700 animate-ping-return' : ''
+            }`}
+            onClick={() => setActiveCode('U')}
+          >
+            <div className="flex flex-col gap-1 items-center">
+              <p>U</p>
+              <div className="bg-slate-100 border border-slate-400 w-6 h-6 flex items-center justify-center rounded-md text-sm text-slate-800">
+                {shiftCodes.length + 2}
+              </div>
             </div>
-          </div>
-        </button>
-
-        <button
-          className={`px-3 py-1.5 rounded-xl border shadow-sm bg-white ${
-            isActive('') ? 'ring-2 ring-slate-700 animate-ping-return' : ''
-          }`}
-          onClick={() => setActiveCode('')}
-        >
-          <div className="flex flex-col gap-1 items-center">
-            <IconBackspace fontWeight={100} />
-            <div className="bg-slate-100 border border-slate-400 w-6 h-6 flex items-center justify-center rounded-md text-sm text-slate-800">
-              {shiftCodes.length + 3}
-            </div>
-          </div>
-        </button>
+          </button>
+        </Tooltip>
       </div>
 
       <button

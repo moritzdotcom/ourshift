@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import Router from 'next/router';
 import {
   computeDiff,
@@ -14,6 +14,10 @@ export function useUnsavedGuard(
   const [unsaved, setUnsaved] = useState<ReturnType<typeof computeDiff>>([]);
   const nextUrlRef = useRef<string | null>(null);
 
+  const unsavedCount = useMemo(() => {
+    return unsaved.reduce((a, b) => a + b.changes.length, 0);
+  }, [unsaved]);
+
   function calcDiff() {
     const current = buildNormalizedFromData(data);
     const diff = computeDiff(baseDataRef.current, current);
@@ -27,19 +31,19 @@ export function useUnsavedGuard(
   // beforeunload
   useEffect(() => {
     function beforeUnload(e: BeforeUnloadEvent) {
-      if (unsaved.length === 0) return;
+      if (unsavedCount === 0) return;
       e.preventDefault();
       e.returnValue = '';
       openConfirm();
     }
     window.addEventListener('beforeunload', beforeUnload);
     return () => window.removeEventListener('beforeunload', beforeUnload);
-  }, [unsaved.length, openConfirm]);
+  }, [unsavedCount, openConfirm]);
 
   // Next.js route guard
   useEffect(() => {
     const onRouteChangeStart = (url: string) => {
-      if (unsaved.length === 0 || nextUrlRef.current === url) return;
+      if (unsavedCount === 0 || nextUrlRef.current === url) return;
       nextUrlRef.current = url;
       openConfirm();
       Router.events.emit('routeChangeError');
@@ -50,7 +54,7 @@ export function useUnsavedGuard(
     return () => {
       Router.events.off('routeChangeStart', onRouteChangeStart);
     };
-  }, [unsaved.length]);
+  }, [unsavedCount]);
 
-  return { unsaved, nextUrlRef, calcDiff };
+  return { unsaved, unsavedCount, nextUrlRef, calcDiff };
 }

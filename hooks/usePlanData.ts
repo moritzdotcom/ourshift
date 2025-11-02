@@ -5,18 +5,21 @@ import { PlanNormalizedMap, buildNormalizedFromData } from '@/lib/planner';
 
 export type ShiftObj = {
   state: 'unchanged' | 'new' | 'updated' | 'deleted';
-  id?: string;
+  id: string;
   code?: ShiftCode | 'U';
   isSick?: boolean;
 };
+
+export type PlanMode = 'CREATE' | 'UPDATE' | 'DELETE';
 
 export function usePlanData(
   shiftCodes: ShiftCode[],
   allowPastWriting?: boolean
 ) {
-  const [data, setData] = useState<Record<string, ShiftObj>>({});
-  const [activeCode, setActiveCode] = useState<ShiftCode | '' | 'K' | 'U'>('');
+  const [data, setData] = useState<Record<string, Array<ShiftObj>>>({});
+  const [activeCode, setActiveCode] = useState<ShiftCode | 'K' | 'U'>('U');
   const [isPainting, setIsPainting] = useState(false);
+  const [mode, setMode] = useState<PlanMode>('UPDATE');
 
   const baseDataRef = useRef<PlanNormalizedMap>({});
   const toastGateRef = useRef(0);
@@ -49,90 +52,173 @@ export function usePlanData(
     y: number,
     m: number,
     d: number,
+    existingId: string | null | undefined,
     code: string
   ) {
     const k = `${empId}|${y}|${m}|${d}`;
-    const shiftCode = ['', 'U'].includes(code)
-      ? (code as '' | 'U')
-      : getShiftCode(code);
+    if (mode === 'DELETE' || code === '') return writeCellDelete(k, existingId);
+
+    const shiftCode = code === 'U' ? (code as 'U') : getShiftCode(code);
     if (shiftCode === undefined) return;
 
+    if (mode === 'CREATE') return writeCellCreate(k, shiftCode);
+    if (mode === 'UPDATE') return writeCellUpdate(k, shiftCode, existingId);
+  }
+
+  function writeCellCreate(key: string, shiftCode: ShiftCode | 'U') {
     setData((prev) => {
-      const existing = prev[k];
+      const existing = prev[key];
 
       if (!existing) {
-        if (shiftCode === '') return prev;
         return {
           ...prev,
-          [k]: {
-            state: 'new',
-            code: shiftCode,
-          },
+          [key]: [
+            {
+              id: `new_shift_${new Date().getTime()}`,
+              state: 'new',
+              code: shiftCode,
+            },
+          ],
+        };
+      } else {
+        return {
+          ...prev,
+          [key]: [
+            ...prev[key],
+            {
+              id: `new_shift_${new Date().getTime()}`,
+              state: 'new',
+              code: shiftCode,
+            },
+          ],
+        };
+      }
+    });
+  }
+
+  function writeCellUpdate(
+    key: string,
+    shiftCode: ShiftCode | 'U',
+    existingId: string | null | undefined
+  ) {
+    setData((prev) => {
+      const existing = getExistingShiftByKey(key, existingId);
+
+      if (!existing) {
+        return {
+          ...prev,
+          [key]: [
+            {
+              id: `new_shift_${new Date().getTime()}`,
+              state: 'new',
+              code: shiftCode,
+            },
+          ],
         };
       }
 
       if (existing.state === 'new') {
-        if (shiftCode === '') {
-          const { [k]: _, ...rest } = prev;
-          return rest;
-        }
         return {
           ...prev,
-          [k]: {
-            ...existing,
-            code: shiftCode,
-          },
+          [key]: prev[key].map((s) =>
+            s.id === existingId
+              ? {
+                  ...existing,
+                  code: shiftCode,
+                }
+              : s
+          ),
         };
       }
 
       if (existing.state === 'deleted') {
-        if (shiftCode === '') return prev;
         return {
           ...prev,
-          [k]: {
-            ...existing,
-            state: 'updated',
-            code: shiftCode,
-          },
+          [key]: prev[key].map((s) =>
+            s.id === existingId
+              ? {
+                  ...existing,
+                  state: 'updated',
+                  code: shiftCode,
+                }
+              : s
+          ),
         };
       }
 
       if (existing.state === 'updated') {
-        if (shiftCode === '') {
-          return {
-            ...prev,
-            [k]: {
-              ...existing,
-              state: 'deleted',
-            },
-          };
-        }
         return {
           ...prev,
-          [k]: {
-            ...existing,
-            code: shiftCode,
-          },
+          [key]: prev[key].map((s) =>
+            s.id === existingId
+              ? {
+                  ...existing,
+                  code: shiftCode,
+                }
+              : s
+          ),
         };
       }
 
       if (existing.state === 'unchanged') {
-        if (shiftCode === '') {
-          return {
-            ...prev,
-            [k]: {
-              ...existing,
-              state: 'deleted',
-            },
-          };
-        }
         return {
           ...prev,
-          [k]: {
-            ...existing,
-            state: 'updated',
-            code: shiftCode,
-          },
+          [key]: prev[key].map((s) =>
+            s.id === existingId
+              ? {
+                  ...existing,
+                  state: 'updated',
+                  code: shiftCode,
+                }
+              : s
+          ),
+        };
+      }
+      return prev;
+    });
+  }
+
+  function writeCellDelete(key: string, existingId: string | null | undefined) {
+    setData((prev) => {
+      const existing = getExistingShiftByKey(key, existingId);
+
+      if (!existing) {
+        return prev;
+      }
+
+      if (existing.state === 'new') {
+        return { ...prev, [key]: prev[key].filter((s) => s.id !== existingId) };
+      }
+
+      if (existing.state === 'deleted') {
+        return prev;
+      }
+
+      if (existing.state === 'updated') {
+        return {
+          ...prev,
+          [key]: prev[key].map((s) =>
+            s.id === existingId
+              ? {
+                  ...existing,
+                  state: 'deleted',
+                }
+              : s
+          ),
+        };
+      }
+
+      if (existing.state === 'unchanged') {
+        return {
+          ...prev,
+          [key]: prev[key].map((s) =>
+            s.id === existingId
+              ? {
+                  ...existing,
+                  state: 'deleted',
+                }
+              : s
+          ),
         };
       }
       return prev;
@@ -144,6 +230,7 @@ export function usePlanData(
     y: number,
     m: number,
     d: number,
+    existingId: string | null | undefined,
     code: string | ShiftCode
   ) {
     const codeStr = typeof code === 'string' ? code : code.code;
@@ -153,50 +240,64 @@ export function usePlanData(
         'Vergangene Schichten können nicht bearbeitet werden.'
       );
     if (codeStr === 'K') {
-      const cellValue = readCell(empId, y, m, d);
+      const cellValue = getExistingShift(empId, y, m, d, existingId);
       if (cellValue === undefined || typeof cellValue.code === 'string') {
         return warnPastOnce(
           'Krankheiten können nur auf bereits geplante Schichten gesetzt werden.'
         );
       }
-      toggleSick(empId, y, m, d);
+      toggleSick(empId, y, m, d, existingId);
     } else {
-      writeCell(empId, y, m, d, codeStr);
+      writeCell(empId, y, m, d, existingId, codeStr);
     }
   }
 
-  function toggleSick(empId: string, y: number, m: number, d: number) {
+  function toggleSick(
+    empId: string,
+    y: number,
+    m: number,
+    d: number,
+    existingId: string | null | undefined
+  ) {
     const k = `${empId}|${y}|${m}|${d}`;
     setData((prev) => {
-      const existing = prev[k];
+      const existing = getExistingShiftByKey(k, existingId);
       if (!existing) return prev;
       if (existing.isSick) {
         return {
           ...prev,
-          [k]: {
-            ...existing,
-            isSick: false,
-            state:
-              existing.state === 'new'
-                ? 'new'
-                : existing.state === 'deleted'
-                ? 'deleted'
-                : 'updated',
-          },
+          [k]: prev[k].map((s) =>
+            s.id === existingId
+              ? {
+                  ...existing,
+                  isSick: false,
+                  state:
+                    existing.state === 'new'
+                      ? 'new'
+                      : existing.state === 'deleted'
+                      ? 'deleted'
+                      : 'updated',
+                }
+              : s
+          ),
         };
       } else {
         return {
           ...prev,
-          [k]: {
-            ...existing,
-            isSick: true,
-            state:
-              existing.state === 'new'
-                ? 'new'
-                : existing.state === 'deleted'
-                ? 'deleted'
-                : 'updated',
-          },
+          [k]: prev[k].map((s) =>
+            s.id === existingId
+              ? {
+                  ...existing,
+                  isSick: true,
+                  state:
+                    existing.state === 'new'
+                      ? 'new'
+                      : existing.state === 'deleted'
+                      ? 'deleted'
+                      : 'updated',
+                }
+              : s
+          ),
         };
       }
     });
@@ -207,21 +308,42 @@ export function usePlanData(
     y: number,
     m: number,
     d: number
-  ): ShiftObj | undefined {
+  ): Array<ShiftObj> | undefined {
     const k = `${empId}|${y}|${m}|${d}`;
     return data[k];
+  }
+
+  function getExistingShift(
+    empId: string,
+    y: number,
+    m: number,
+    d: number,
+    existingId: string | null | undefined
+  ): ShiftObj | undefined {
+    const k = `${empId}|${y}|${m}|${d}`;
+    return data[k]?.find((s) => s.id === existingId);
+  }
+
+  function getExistingShiftByKey(
+    key: string,
+    existingId: string | null | undefined
+  ): ShiftObj | undefined {
+    return data[key]?.find((s) => s.id === existingId);
   }
 
   function resetBaseFromCurrent() {
     // Remove all 'deleted' entries from data
     setData((prev) => {
-      const newData: Record<string, ShiftObj> = {};
+      const newData: Record<string, Array<ShiftObj>> = {};
       for (const [k, v] of Object.entries(prev)) {
-        if (v.state === 'deleted') continue;
-        if (v.state === 'updated' || v.state === 'new') {
-          newData[k] = { ...v, state: 'unchanged' };
-        } else {
-          newData[k] = v;
+        newData[k] = [];
+        for (const s of v) {
+          if (s.state === 'deleted') continue;
+          if (s.state === 'updated' || s.state === 'new') {
+            newData[k].push({ ...s, state: 'unchanged' });
+          } else {
+            newData[k].push(s);
+          }
         }
       }
       return newData;
@@ -233,6 +355,8 @@ export function usePlanData(
   return {
     data,
     setData,
+    mode,
+    setMode,
     activeCode,
     setActiveCode,
     isPainting,

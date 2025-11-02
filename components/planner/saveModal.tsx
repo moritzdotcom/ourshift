@@ -4,6 +4,7 @@ import { Modal, Group, Button, Text } from '@mantine/core';
 export default function PlannerSaveModal({
   opened,
   unsaved,
+  unsavedCount,
   employeeName,
   codeLabel,
   onSave,
@@ -11,6 +12,7 @@ export default function PlannerSaveModal({
 }: {
   opened: boolean;
   unsaved: ReturnType<typeof computeDiff>;
+  unsavedCount: number;
   employeeName: (id: string) => string;
   codeLabel: (id: string) => string;
   onSave: () => void;
@@ -27,7 +29,7 @@ export default function PlannerSaveModal({
       size="lg"
     >
       <Text c="dimmed" size="sm" mb="sm">
-        Du hast {unsaved.length} ungespeicherte Änderung(en). Möchtest du sie
+        Du hast {unsavedCount} ungespeicherte Änderung(en). Möchtest du sie
         vorher speichern?
       </Text>
 
@@ -42,19 +44,21 @@ export default function PlannerSaveModal({
             </tr>
           </thead>
           <tbody>
-            {unsaved.map((c) => {
-              const d = new Date(c.y, c.m, c.d);
-              return (
-                <tr key={c.key} className="border-t">
-                  <td className="px-2 py-1">{d.toLocaleDateString()}</td>
-                  <td className="px-2 py-1">
-                    {/* optional: Mitarbeitername mappen */}
-                    {employeeName(c.userId)}
-                  </td>
-                  <td className="px-2 py-1">{codeLabel(c.fromCodeId)}</td>
-                  <td className="px-2 py-1">{codeLabel(c.toCodeId)}</td>
-                </tr>
-              );
+            {unsaved.map((u) => {
+              const d = new Date(u.y, u.m, u.d);
+              return u.changes.map((c) => {
+                return (
+                  <tr key={u.key} className="border-t">
+                    <td className="px-2 py-1">{d.toLocaleDateString()}</td>
+                    <td className="px-2 py-1">
+                      {/* optional: Mitarbeitername mappen */}
+                      {employeeName(u.userId)}
+                    </td>
+                    <td className="px-2 py-1">{codeLabel(c.fromCodeId)}</td>
+                    <td className="px-2 py-1">{codeLabel(c.toCodeId)}</td>
+                  </tr>
+                );
+              });
             })}
           </tbody>
         </table>

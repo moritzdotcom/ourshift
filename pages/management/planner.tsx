@@ -35,6 +35,8 @@ export default function PlanPage() {
   const {
     data,
     setData,
+    mode,
+    setMode,
     activeCode,
     setActiveCode,
     isPainting,
@@ -42,14 +44,13 @@ export default function PlanPage() {
     readCell,
     tryWriteCell,
     isPastDate,
-    warnPastOnce,
     baseDataRef,
     resetBaseFromCurrent,
   } = usePlanData(shiftCodes, true);
 
   const [confirmLeaveOpen, { open: openConfirm, close: closeConfirm }] =
     useDisclosure(false);
-  const { unsaved, nextUrlRef, calcDiff } = useUnsavedGuard(
+  const { unsaved, unsavedCount, nextUrlRef, calcDiff } = useUnsavedGuard(
     data,
     baseDataRef,
     openConfirm
@@ -91,12 +92,23 @@ export default function PlanPage() {
         const k = `${
           s.userId
         }|${d.getFullYear()}|${d.getMonth()}|${d.getDate()}`;
-        initialData[k] = {
-          state: 'unchanged',
-          id: s.id,
-          code: s.code || undefined,
-          isSick: s.isSick || false,
-        };
+        if (initialData[k]) {
+          initialData[k].push({
+            state: 'unchanged',
+            id: s.id,
+            code: s.code || undefined,
+            isSick: s.isSick || false,
+          });
+        } else {
+          initialData[k] = [
+            {
+              state: 'unchanged',
+              id: s.id,
+              code: s.code || undefined,
+              isSick: s.isSick || false,
+            },
+          ];
+        }
       }
       setData((prev) => {
         const merged = { ...(initialData as any), ...(prev as any) };
@@ -111,9 +123,7 @@ export default function PlanPage() {
   async function handleSave() {
     const toSave: any[] = [];
 
-    for (const [k, v] of Object.entries(data).filter(
-      ([_, v]) => v.state !== 'unchanged'
-    )) {
+    for (const [k, v] of Object.entries(data)) {
       const [userId, y, m, d] = k.split('|');
       const yy = parseInt(y, 10);
       const mm = parseInt(m, 10);
@@ -123,41 +133,45 @@ export default function PlanPage() {
 
       const date = new Date(yy, mm, dd);
 
-      let startMin = null;
-      let endMin = null;
-      let codeId = null;
+      for (const so of v) {
+        if (so.state == 'unchanged') continue;
 
-      if (v.code !== 'U') {
-        startMin = v.code?.windowStartMin ?? null;
-        endMin = v.code?.windowEndMin ?? null;
-        codeId = v.code?.id ?? null;
+        let startMin = null;
+        let endMin = null;
+        let codeId = null;
+
+        if (so.code !== 'U') {
+          startMin = so.code?.windowStartMin ?? null;
+          endMin = so.code?.windowEndMin ?? null;
+          codeId = so.code?.id ?? null;
+        }
+
+        const isAllDay = startMin === null && endMin === null;
+
+        const startIso = isAllDay
+          ? mergeDateAndMinutes(date, 0) // 00:00 lokaler Tag → UTC
+          : mergeDateAndMinutes(date, startMin);
+
+        const endDate =
+          isAllDay || (endMin && startMin && endMin < startMin)
+            ? new Date(yy, mm, dd + 1)
+            : date;
+        const endIso = isAllDay
+          ? // EXKLUSIVES Ende: nächster Tag 00:00, DST-sicher per Date-Komponenten
+            mergeDateAndMinutes(endDate, 0)
+          : mergeDateAndMinutes(endDate, endMin);
+
+        toSave.push({
+          userId,
+          start: startIso,
+          end: endIso,
+          codeId,
+          existingId: so.id,
+          state: so.state,
+          isSick: so.isSick || false,
+          vacation: so.code === 'U',
+        });
       }
-
-      const isAllDay = startMin === null && endMin === null;
-
-      const startIso = isAllDay
-        ? mergeDateAndMinutes(date, 0) // 00:00 lokaler Tag → UTC
-        : mergeDateAndMinutes(date, startMin);
-
-      const endDate =
-        isAllDay || (endMin && startMin && endMin < startMin)
-          ? new Date(yy, mm, dd + 1)
-          : date;
-      const endIso = isAllDay
-        ? // EXKLUSIVES Ende: nächster Tag 00:00, DST-sicher per Date-Komponenten
-          mergeDateAndMinutes(endDate, 0)
-        : mergeDateAndMinutes(endDate, endMin);
-
-      toSave.push({
-        userId,
-        start: startIso,
-        end: endIso,
-        codeId,
-        existingId: v.id,
-        state: v.state,
-        isSick: v.isSick || false,
-        vacation: v.code === 'U',
-      });
     }
 
     if (!toSave.length) return showInfo('Keine Änderungen zum Speichern.');
@@ -215,6 +229,7 @@ export default function PlanPage() {
                   activeCode={activeCode}
                   setIsPainting={setIsPainting}
                   isPainting={isPainting}
+                  mode={mode}
                 />
               );
             })}
@@ -226,13 +241,16 @@ export default function PlanPage() {
         shiftCodes={shiftCodes}
         activeCode={activeCode}
         setActiveCode={setActiveCode}
-        unsavedCount={unsaved.length}
+        unsavedCount={unsavedCount}
         onSave={handleSave}
+        mode={mode}
+        setMode={setMode}
       />
 
       <PlannerSaveModal
         opened={confirmLeaveOpen}
         unsaved={unsaved}
+        unsavedCount={unsavedCount}
         codeLabel={codeLabel}
         employeeName={employeeName}
         onCancel={() => {
