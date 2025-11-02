@@ -106,16 +106,12 @@ function TakeoverShiftRow({
           </div>
         </div>
       </Group>
-      <div className="mt-2 w-full max-w-xl mx-auto">
-        <Button
-          size="xs"
-          variant="subtle"
-          color="violet"
-          onClick={() => handleTakeover(s)}
-          fullWidth
-        >
-          Schicht übernehmen
-        </Button>
+      <div className="mt-3 flex justify-end">
+        <div className="w-full sm:w-auto">
+          <Button size="sm" onClick={() => handleTakeover(s)} fullWidth>
+            Schicht übernehmen
+          </Button>
+        </div>
       </div>
     </Card>
   );

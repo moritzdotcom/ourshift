@@ -2,6 +2,7 @@ import HtmlHead from '@/components/htmlHead';
 import KioskPinModal from '@/components/kiosk/pinModal';
 import KioskShiftCard from '@/components/kiosk/shiftCard';
 import { KioskStopModal } from '@/components/kiosk/stopModal';
+import KioskUserModal from '@/components/kiosk/userModal';
 import useKioskData, { KioskShift } from '@/hooks/useKioskData';
 import { Box, Stack, Text, Button } from '@mantine/core';
 import { IconLockOpen, IconMaximize } from '@tabler/icons-react';
@@ -21,7 +22,7 @@ function requestFullscreenEl() {
 }
 
 export default function KioskPage() {
-  const { shifts, handlePunch } = useKioskData();
+  const { shifts, handlePunch, handleTakeover, users } = useKioskData();
 
   const [exitOpen, setExitOpen] = useState(false);
 
@@ -80,6 +81,13 @@ export default function KioskPage() {
   const handleOpenPinForShift = (shift: KioskShift) => {
     setActiveShiftForPin(shift);
     setPinOpen(true);
+  };
+
+  const [userOpen, setUserOpen] = useState(false);
+
+  const handleOpenUserModal = (shift: KioskShift) => {
+    setActiveShiftForPin(shift);
+    setUserOpen(true);
   };
 
   return (
@@ -193,6 +201,7 @@ export default function KioskPage() {
             key={shift.id}
             shift={shift}
             onPunch={handleOpenPinForShift}
+            onTakeover={handleOpenUserModal}
           />
         ))}
       </Stack>
@@ -206,6 +215,17 @@ export default function KioskPage() {
         }}
         shift={activeShiftForPin}
         handlePunch={handlePunch}
+      />
+
+      <KioskUserModal
+        opened={userOpen}
+        onClose={() => {
+          setUserOpen(false);
+          setActiveShiftForPin(null);
+        }}
+        shift={activeShiftForPin}
+        users={users.filter((u) => u.id !== activeShiftForPin?.user.id)}
+        handleTakeover={handleTakeover}
       />
 
       {/* Footer Branding */}

@@ -1,15 +1,20 @@
 import { KioskShift } from '@/hooks/useKioskData';
-import { shiftIsActive } from '@/lib/shift';
-import { Stack, Text, Card, Button, Group, Divider, rem } from '@mantine/core';
-import { IconClock, IconLogout, IconLogin2 } from '@tabler/icons-react';
+import { Stack, Text, Card, Group, Divider, rem } from '@mantine/core';
+import { IconClock } from '@tabler/icons-react';
 import { useEffect, useState, useMemo } from 'react';
+import PunchTakeoverSwitcher from './punchTakeoverSwitcher';
 
 type ShiftCardProps = {
   shift: KioskShift;
   onPunch: (shift: KioskShift) => void;
+  onTakeover: (shift: KioskShift) => void;
 };
 
-export default function KioskShiftCard({ shift, onPunch }: ShiftCardProps) {
+export default function KioskShiftCard({
+  shift,
+  onPunch,
+  onTakeover,
+}: ShiftCardProps) {
   // ---------- Laufzeit-Timer ----------
   // Wir zeigen die Laufzeit nur, wenn clockIn vorhanden ist und clockOut nicht
   const isRunning = !!shift.clockIn && !shift.clockOut;
@@ -140,24 +145,13 @@ export default function KioskShiftCard({ shift, onPunch }: ShiftCardProps) {
           </Text>
         </Stack>
         {/* Einstempeln / Austempeln Button */}
-        {(isRunning || shiftIsActive(shift, 120 * 60_000)) && (
-          <Button
-            fullWidth
-            radius="md"
-            style={{
-              backgroundColor: isRunning ? '#ef4444' : '#10b981',
-              color: 'white',
-              fontSize: '1.2rem',
-              fontWeight: 600,
-              height: '4rem',
-              marginTop: '1rem',
-            }}
-            leftSection={isRunning ? <IconLogout /> : <IconLogin2 />}
-            onClick={() => onPunch(shift)}
-          >
-            {punchLabel}
-          </Button>
-        )}
+        <PunchTakeoverSwitcher
+          shift={shift}
+          isRunning={isRunning}
+          punchLabel={punchLabel}
+          onPunch={onPunch}
+          onTakeover={onTakeover}
+        />
       </Card>
     </div>
   );

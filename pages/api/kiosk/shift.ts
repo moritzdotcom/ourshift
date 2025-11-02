@@ -22,6 +22,7 @@ export type ApiGetKioskShiftResponse = Prisma.ShiftGetPayload<{
   select: {
     user: {
       select: {
+        id: true;
         firstName: true;
         lastName: true;
         kiosk: { select: { pinLength: true } };
@@ -56,6 +57,7 @@ async function handleGET(req: NextApiRequest, res: NextApiResponse) {
     select: {
       user: {
         select: {
+          id: true,
           firstName: true,
           lastName: true,
           kiosk: { select: { pinLength: true } },
@@ -85,6 +87,7 @@ async function handleGET(req: NextApiRequest, res: NextApiResponse) {
     select: {
       user: {
         select: {
+          id: true,
           firstName: true,
           lastName: true,
           kiosk: { select: { pinLength: true } },
