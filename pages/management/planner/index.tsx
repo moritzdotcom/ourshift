@@ -5,7 +5,7 @@ import ManagementLayout from '@/layouts/managementLayout';
 import { useDisclosure } from '@mantine/hooks';
 
 import { Holiday, ShiftCode } from '@/generated/prisma';
-import { ApiGetSimpleUsersResponse } from '../api/users';
+import { ApiGetSimpleUsersResponse } from '../../api/users';
 import { dateToISO, mergeDateAndMinutes } from '@/lib/dates';
 import { showInfo, showSuccess } from '@/lib/toast';
 import { buildNormalizedFromData } from '@/lib/planner';
@@ -18,7 +18,7 @@ import PlannerTimeSelection from '@/components/planner/timeSelection';
 
 import { usePlanData } from '@/hooks/usePlanData';
 import { useUnsavedGuard } from '@/hooks/useUnsavedGuard';
-import { ApiGetShiftsPlannerResponse } from '../api/shifts/planner';
+import { ApiGetShiftsPlannerResponse } from '../../api/shifts/planner';
 import { employedInMonth } from '@/lib/user';
 
 export default function PlanPage() {

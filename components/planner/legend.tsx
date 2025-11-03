@@ -1,21 +1,11 @@
 import { ShiftCode } from '@/generated/prisma';
-import { minToHHMM } from '@/lib/dates';
+import { legendLabel } from '@/lib/shiftCode';
 
 export default function PlannerLegend({
   shiftCodes,
 }: {
   shiftCodes: ShiftCode[];
 }) {
-  function legendLabel(code: ShiftCode) {
-    let label = `${code.code}: ${code.label}`;
-    if (code.windowStartMin && code.windowEndMin) {
-      return `${label} (${minToHHMM(code.windowStartMin)} - ${minToHHMM(
-        code.windowEndMin
-      )})`;
-    }
-    return label;
-  }
-
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm">
       {shiftCodes.map((c) => (

@@ -1,8 +1,10 @@
 import React from 'react';
 import { Holiday, ShiftCode } from '@/generated/prisma';
 import { PlanMode, ShiftObj } from '@/hooks/usePlanData';
-import { Tooltip } from '@mantine/core';
+import { ActionIcon, Button, Tooltip } from '@mantine/core';
 import PlannerCell from './cell';
+import Link from 'next/link';
+import { IconPrinter } from '@tabler/icons-react';
 
 function daysInMonth(year: number, monthIndex: number) {
   return new Date(year, monthIndex + 1, 0).getDate();
@@ -13,6 +15,18 @@ function isWeekend(year: number, monthIndex: number, day: number) {
 }
 function keyOf(y: number, m: number, d: number) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+function monthBounds(year: number, month0: number) {
+  const from = new Date(year, month0, 1);
+  const to = new Date(year, month0 + 1, 0); // letzter Tag des Monats
+  return { from, to };
+}
+function toYMD(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 type Emp = {
@@ -71,15 +85,29 @@ export default function PlannerGridMonth({
     );
   }
 
+  const bounds = monthBounds(year, month);
+
   return (
     <div className="w-full bg-white rounded-2xl shadow-sm border overflow-hidden select-none">
       {/* Month header */}
       <div className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b px-4 py-3 flex items-center justify-between">
-        <div className="font-semibold">
-          {new Date(year, month, 1).toLocaleDateString('de', {
-            month: 'long',
-            year: 'numeric',
-          })}
+        <div className="flex gap-3 items-center">
+          <div className="font-semibold">
+            {new Date(year, month, 1).toLocaleDateString('de', {
+              month: 'long',
+              year: 'numeric',
+            })}
+          </div>
+          <ActionIcon
+            component={Link}
+            href={`/management/planner/print?from=${toYMD(
+              bounds.from
+            )}&to=${toYMD(bounds.to)}`}
+            variant="subtle"
+            size="lg"
+          >
+            <IconPrinter />
+          </ActionIcon>
         </div>
         <div className="text-sm text-slate-500">
           Zum Planen: Klick = Eintragen · Alt+Klick = Löschen · Maus ziehen =
