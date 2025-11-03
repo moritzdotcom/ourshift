@@ -7,6 +7,7 @@ import { ApiGetShiftsResponse } from '@/pages/api/shifts';
 import ShiftCodeBadge from '@/components/shiftCodes/badge';
 import { legendLabel, shiftCodeBadgeContent } from '@/lib/shiftCode';
 import { useViewportSize } from '@mantine/hooks';
+import { employedInMonth } from '@/lib/user';
 
 function isWeekend(dt: Date) {
   return dt.getDay() == 0;
@@ -201,35 +202,32 @@ export default function PlannerPrintPage() {
               ))}
             </div>
             <div>
-              {userIds
-                .sort((a, b) =>
-                  fullName(users.find((u) => u.id === a)).localeCompare(
-                    fullName(users.find((u) => u.id === b)),
-                    'de'
-                  )
+              {users
+                .filter((u) =>
+                  employedInMonth(u, from.getFullYear(), from.getMonth())
                 )
-                .map((uid) => {
-                  const u = users.find((x) => x.id === uid);
+                .sort((a, b) => fullName(a).localeCompare(fullName(b), 'de'))
+                .map((u) => {
                   return (
                     <div
-                      key={uid}
+                      key={u.id}
                       className="grid min-h-14"
                       style={{
                         gridTemplateColumns: `${firstColWidth}px repeat(${days.length}, ${otherColsWidth}px)`,
                       }}
                     >
                       <div className="flex items-center border-r-2 border-b p-1 text-sm">
-                        {fullName(u) || uid}
+                        {fullName(u)}
                       </div>
                       {days.map((d) => {
                         const codes =
-                          byUserDay.get(uid)?.get(d.getDate()) ?? null;
+                          byUserDay.get(u.id)?.get(d.getDate()) ?? null;
                         return (
                           <div
                             className={`${renderBgColor(
                               d
                             )} flex flex-col gap-1 items-center justify-center border-b border-r`}
-                            key={`${uid}-${d.getDate()}`}
+                            key={`${u.id}-${d.getDate()}`}
                           >
                             {codes ? (
                               codes.map((c) => (

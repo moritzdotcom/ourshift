@@ -4,7 +4,7 @@ import { IconDownload, IconCalendar } from '@tabler/icons-react';
 import axios from 'axios';
 import ManagementLayout from '@/layouts/managementLayout';
 import PayrollPDFDocument from '@/components/payroll/payrollPdf';
-import { downloadCSV, downloadPayrollXLSX } from '@/lib/payroll';
+import { downloadPayrollXLSX } from '@/lib/payroll';
 import PayrollTable from '@/components/payroll/table';
 import PayrollKpiCards from '@/components/payroll/kpiCards';
 import { PayrollPayload } from '@/lib/kpiCache/payroll';
