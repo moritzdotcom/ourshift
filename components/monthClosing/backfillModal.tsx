@@ -1,51 +1,35 @@
-import { useState, useMemo } from 'react';
-import { Modal, Button, Group, Stack, Text, Card } from '@mantine/core';
-import axios from 'axios';
-import { showError, showSuccess } from '@/lib/toast';
+import { Shift } from '@/generated/prisma';
+import { dateTimeToHuman, dateToHuman, timeToHuman } from '@/lib/dates';
+import { showError, showInfo, showSuccess } from '@/lib/toast';
+import { MonthClosingShift } from '@/pages/management/monthClosing';
+import { Button, Card, Group, Modal, Stack, Text } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
-import { ApiPostChangeRequestResponse } from '@/pages/api/changeRequests';
-import { dateTimeToHuman, timeToHuman } from '@/lib/dates';
-import { MyShift } from '@/pages';
-
-type Props = {
-  opened: boolean;
-  onClose: () => void;
-  shift: MyShift;
-  onCreated?: (cr: ApiPostChangeRequestResponse) => void;
-};
-
-function fmtDate(s: string | Date) {
-  const d = typeof s === 'string' ? new Date(s) : s;
-  return d.toLocaleDateString('de', {
-    weekday: 'long',
-    day: '2-digit',
-    month: '2-digit',
-    year: '2-digit',
-  });
-}
+import axios from 'axios';
+import { useState, useMemo } from 'react';
 
 function isDiffDay(a: string | Date | null, b: string | Date | null) {
   if (!a || !b) return false;
   return new Date(a).getDate() !== new Date(b).getDate();
 }
 
-export default function TimeChangeRequestModal({
+export default function MonthClosingBackfillModal({
   opened,
   onClose,
   shift,
-  onCreated,
-}: Props) {
+  onUpdate,
+}: {
+  opened: boolean;
+  onClose: () => void;
+  shift: MonthClosingShift;
+  onUpdate: (p: MonthClosingShift, del?: boolean) => void;
+}) {
   const getDate = (t: any) => (t ? new Date(t) : null);
   // Mantine DateTimePicker arbeitet mit JS Date (lokal). toISOString() macht daraus UTC.
   const [clockIn, setClockIn] = useState<Date | null>(
-    getDate(shift.changeRequest?.clockIn) ||
-      getDate(shift.clockIn) ||
-      getDate(shift.start)
+    getDate(shift.clockIn || shift.start)
   );
   const [clockOut, setClockOut] = useState<Date | null>(
-    getDate(shift.changeRequest?.clockOut) ||
-      getDate(shift.clockOut) ||
-      getDate(shift.end)
+    getDate(shift.clockOut || shift.end)
   );
   const [submitting, setSubmitting] = useState(false);
 
@@ -61,21 +45,38 @@ export default function TimeChangeRequestModal({
     setSubmitting(true);
     try {
       const payload = {
-        shiftId: shift.id,
         clockIn: clockIn!.toISOString(),
         clockOut: clockOut!.toISOString(),
       };
-      const { data } = await axios.post<ApiPostChangeRequestResponse>(
-        '/api/changeRequests',
+      const { data } = await axios.put<Shift>(
+        `/api/shifts/${shift.id}`,
         payload
       );
-      showSuccess('Korrekturantrag erstellt.');
-      onCreated?.(data);
+      showSuccess('Zeiten aktualisiert.');
+      onUpdate({
+        ...shift,
+        clockIn: data.clockIn || shift.clockIn,
+        clockOut: data.clockOut || shift.clockOut,
+      });
       onClose();
     } catch (e: any) {
       showError(
         e?.response?.data?.message ?? 'Antrag konnte nicht erstellt werden.'
       );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleDelete() {
+    setSubmitting(true);
+    try {
+      const { data } = await axios.delete(`/api/shifts/${shift.id}`);
+      showInfo('Schicht gelöscht.');
+      onUpdate(shift, true);
+      onClose();
+    } catch (e: any) {
+      showError(e?.response?.data?.message ?? 'Fehler beim löschen');
     } finally {
       setSubmitting(false);
     }
@@ -90,10 +91,6 @@ export default function TimeChangeRequestModal({
       size="lg"
     >
       <Stack gap="md">
-        <Text size="sm" c="dimmed">
-          Erstelle einen Korrekturantrag für diese Schicht.
-        </Text>
-
         <Card
           withBorder
           radius="md"
@@ -102,8 +99,9 @@ export default function TimeChangeRequestModal({
         >
           <Group justify="space-between" wrap="nowrap">
             <div className="min-w-0">
+              <div className="font-medium truncate">{shift.user.firstName}</div>
               <div className="font-medium truncate">
-                {fmtDate(shift.start)} · {timeToHuman(shift.start)}-
+                {dateToHuman(shift.start)} · {timeToHuman(shift.start)}-
                 {timeToHuman(shift.end)}
               </div>
               {shift.code && (
@@ -123,12 +121,7 @@ export default function TimeChangeRequestModal({
             placeholder="Datum & Uhrzeit"
             value={clockIn}
             onChange={(val) =>
-              setClockIn(
-                getDate(val) ||
-                  getDate(shift.changeRequest?.clockIn) ||
-                  getDate(shift.clockIn) ||
-                  getDate(shift.start)
-              )
+              setClockIn(getDate(val) || getDate(shift.clockIn || shift.start))
             }
             withSeconds={false}
             aria-label="clock-in"
@@ -150,12 +143,7 @@ export default function TimeChangeRequestModal({
             placeholder="Datum & Uhrzeit"
             value={clockOut}
             onChange={(val) =>
-              setClockOut(
-                getDate(val) ||
-                  getDate(shift.changeRequest?.clockOut) ||
-                  getDate(shift.clockOut) ||
-                  getDate(shift.end)
-              )
+              setClockOut(getDate(val) || getDate(shift.clockOut || shift.end))
             }
             withSeconds={false}
             minDate={clockIn ?? undefined}
@@ -180,17 +168,27 @@ export default function TimeChangeRequestModal({
           </Text>
         )}
 
-        <Group justify="flex-end" mt="md">
-          <Button variant="default" onClick={onClose} disabled={submitting}>
-            Abbrechen
-          </Button>
+        <Group justify="space-between" mt="md">
           <Button
-            onClick={handleSubmit}
-            loading={submitting}
-            disabled={!canSubmit}
+            variant="subtle"
+            color="red"
+            onClick={handleDelete}
+            disabled={submitting}
           >
-            Antrag senden
+            Schicht löschen
           </Button>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={onClose} disabled={submitting}>
+              Abbrechen
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              loading={submitting}
+              disabled={!canSubmit}
+            >
+              Zeiten speichern
+            </Button>
+          </Group>
         </Group>
       </Stack>
     </Modal>

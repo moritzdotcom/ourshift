@@ -18,6 +18,7 @@ import {
   IconChevronLeft,
   IconCoins,
   IconDoorExit,
+  IconCalendarCheck,
 } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
@@ -53,6 +54,12 @@ export default function ManagementLayout({
       label: 'Schichtplan',
       icon: IconCalendar,
       href: '/management/planner',
+      role: 'MANAGER',
+    },
+    {
+      label: 'Monatsabschluss',
+      icon: IconCalendarCheck,
+      href: '/management/monthClosing',
       role: 'MANAGER',
     },
     {
