@@ -116,7 +116,7 @@ function calculateBonus(
           (contract.salaryMonthlyCents * contract.vacationBonus) / 100,
       };
     }
-    if (monthIndex === 11 && contract.christmasBonus) {
+    if (monthIndex === 10 && contract.christmasBonus) {
       return {
         name: 'Weihnachtsgeld',
         amountCents:
