@@ -294,9 +294,18 @@ export default function HomePage() {
                     Keine weiteren Schichten geplant.
                   </Text>
                 ) : (
-                  [...(pastToday || []), ...upcoming].map((s) => (
-                    <HomeShiftRow key={s.id} s={s} />
-                  ))
+                  <>
+                    {(pastToday || []).map((s) => (
+                      <ShiftRowPast
+                        key={s.id}
+                        s={s}
+                        onChangeRequest={() => setChangeReqShift(s)}
+                      />
+                    ))}
+                    {(upcoming || []).map((s) => (
+                      <HomeShiftRow key={s.id} s={s} />
+                    ))}
+                  </>
                 )}
               </Stack>
             </Card>
