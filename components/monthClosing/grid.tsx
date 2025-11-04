@@ -40,11 +40,13 @@ export default function MonthClosingGrid({
       <div className="flex flex-col" style={{ marginTop: HEADER_HEIGHT }}>
         {Array.from({ length: 24 }).map((_, i) => (
           <div
-            className="text-stone-400 text-xs flex items-center"
+            className="text-stone-400 text-xs flex"
             key={`ts-${i}`}
             style={{ height: HOUR_HEIGHT }}
           >
-            {i.toString().padStart(2, '0')}:00
+            <span className="-translate-y-2">
+              {i.toString().padStart(2, '0')}:00
+            </span>
           </div>
         ))}
       </div>
