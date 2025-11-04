@@ -18,8 +18,8 @@ function shiftsForMonth<
     end: Date;
   }
 >(shifts: S[], year: number, month: number) {
-  const bom = new Date(year, month, 0).getTime();
-  const eom = new Date(year, month + 1, 0).getTime();
+  const bom = new Date(year, month, 1).getTime();
+  const eom = new Date(year, month + 1, 1).getTime();
   return shifts.filter(
     (s) => s.end.getTime() >= bom && s.start.getTime() <= eom
   );

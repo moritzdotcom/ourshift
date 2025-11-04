@@ -31,7 +31,7 @@ async function handleGET(req: NextApiRequest, res: NextApiResponse) {
     const { where, error } = buildShiftWhereQuery(
       req.query.from,
       req.query.to,
-      'contained'
+      'overlap'
     );
     if (error) return res.status(400).json({ error });
 

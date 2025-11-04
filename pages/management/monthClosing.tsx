@@ -52,7 +52,7 @@ export default function MonthClosingPage() {
         axios.get<ApiGetShiftsResponse>('/api/shifts', {
           params: {
             from: dateToISO(new Date(year, month, 1)),
-            to: dateToISO(new Date(year, month + 1, 1)),
+            to: dateToISO(new Date(year, month + 1, 2)),
           },
         }),
       ]);

@@ -69,8 +69,23 @@ async function handlePOST(req: NextApiRequest, res: NextApiResponse) {
   };
 
   if (toUpdate.length > 0) {
+    const shiftIds = await prisma.shift.findMany({
+      where: {
+        id: {
+          in: toUpdate.map((u) => u.existingId).filter((i) => !!i) as string[],
+        },
+      },
+      select: { id: true },
+    });
+
     await prisma.$transaction(
       toUpdate.flatMap((shift) => {
+        // Edge Case: Urlaub gelöscht und mit Schicht überschrieben
+        if (!shiftIds.find(({ id }) => id == shift.existingId)) {
+          toCreate.push(shift);
+          toDeleteVacationDays.push(shift);
+          return [];
+        }
         if (shift.isSick) {
           return [
             prisma.shift.update({
