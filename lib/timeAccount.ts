@@ -18,8 +18,8 @@ function shiftsForMonth<
     end: Date;
   }
 >(shifts: S[], year: number, month: number) {
-  const bom = new Date(year, month, 1).getTime();
-  const eom = new Date(year, month + 1, 1).getTime();
+  const bom = new Date(year, month, 1, 0, 0, 0, 0).getTime();
+  const eom = new Date(year, month + 1, 0, 23, 59, 59, 999).getTime();
   return shifts.filter(
     (s) => s.end.getTime() >= bom && s.start.getTime() <= eom
   );
@@ -30,8 +30,8 @@ function vacationDaysForMonth<
     date: Date;
   }
 >(vacationDays: VD[], year: number, month: number) {
-  const bom = new Date(year, month, 1).getTime();
-  const eom = new Date(year, month + 1, 0).getTime();
+  const bom = new Date(year, month, 1, 0, 0, 0, 0).getTime();
+  const eom = new Date(year, month + 1, 0, 23, 59, 59, 999).getTime();
   return vacationDays.filter(
     (d) => d.date.getTime() >= bom && d.date.getTime() <= eom
   );
@@ -65,20 +65,45 @@ function trailingVacationDaysAtMonthEnd<
   return Array.from({ length: k }, (_, i) => byDay.get(start + i)!);
 }
 
-function totalShiftMin(shift: {
-  start: Date;
-  end: Date;
-  clockIn: Date | null;
-  clockOut: Date | null;
-  shiftAbsence: {
-    reason: 'SICKNESS';
-  } | null;
-}) {
-  if (shift.clockIn && shift.clockOut)
-    return (shift.clockOut.getTime() - shift.clockIn.getTime()) / 60_000;
-  if (shift.shiftAbsence)
-    return (shift.end.getTime() - shift.start.getTime()) / 60_000;
-  return 0;
+function minutesInRange(a: Date, b: Date) {
+  return Math.max(0, Math.round((b.getTime() - a.getTime()) / 60000));
+}
+
+function clampIntervalToMonth(
+  start: Date,
+  end: Date,
+  year: number,
+  month0: number
+) {
+  const bom = new Date(year, month0, 1, 0, 0, 0, 0);
+  const eom = new Date(year, month0 + 1, 0, 23, 59, 59, 999);
+  const s = start < bom ? bom : start;
+  const e = end > eom ? eom : end;
+  if (e <= s) return null;
+  return { s, e };
+}
+
+function shiftMinutesForMonth(
+  s: {
+    start: Date;
+    end: Date;
+    clockIn: Date | null;
+    clockOut: Date | null;
+    shiftAbsence: { reason: 'SICKNESS' } | null;
+  },
+  year: number,
+  month0: number
+) {
+  const shownStart = s.clockIn ?? s.start;
+  const shownEnd = s.clockOut ?? s.end;
+  const clamped = clampIntervalToMonth(shownStart, shownEnd, year, month0);
+  if (!clamped) return 0;
+  const mins = minutesInRange(clamped.s, clamped.e);
+  // Bei Krankheit zählst du plan (start/end) – aber auch clampen!
+  if (s.shiftAbsence) return mins;
+  // Ohne Stempel & ohne Absence: 0
+  if (!s.clockIn || !s.clockOut) return 0;
+  return mins;
 }
 
 export type WorkingStatsEntry = {
@@ -100,9 +125,9 @@ export async function calculateWorkingStats(
   year: number,
   month: number
 ): Promise<WorkingStatsEntry[]> {
-  const boy = new Date(year, 0, 1);
-  const eoy = new Date(year + 1, 0, 0);
-  const eotf = new Date(year, month + 1, 0);
+  const boy = new Date(year, 0, 1, 0, 0, 0, 0);
+  const eoy = new Date(year + 1, 0, 0, 23, 59, 59, 999);
+  const eotf = new Date(year, month + 1, 0, 23, 59, 59, 999);
 
   const users = await prisma.user.findMany({
     where: {
@@ -166,12 +191,18 @@ export async function calculateWorkingStats(
     const sickDaySet = new Set();
 
     for (const c of u.contracts) {
-      const start = new Date(Math.max(c.validFrom.getTime(), boy.getTime()));
+      const start = new Date(
+        Math.max(c.validFrom.setHours(0, 0, 0, 0), boy.getTime())
+      );
       const end = new Date(
-        c.validUntil ? Math.min(c.validUntil.getTime(), eotf.getTime()) : eotf
+        c.validUntil
+          ? Math.min(c.validUntil.setHours(23, 59, 59, 999), eotf.getTime())
+          : eotf
       );
       const endOfYear = new Date(
-        c.validUntil ? Math.min(c.validUntil.getTime(), eoy.getTime()) : eoy
+        c.validUntil
+          ? Math.min(c.validUntil.setHours(23, 59, 59, 999), eoy.getTime())
+          : eoy
       );
       const totalMonths = monthsBetweenInclusive(start, endOfYear);
       entry.yVacationPlan += ((c.vacationDaysAnnual || 0) / 12) * totalMonths;
@@ -198,7 +229,7 @@ export async function calculateWorkingStats(
           entry.mVacation = vacationDays;
 
           for (const s of shifts) {
-            const totalHours = totalShiftMin(s) / 60;
+            const totalHours = shiftMinutesForMonth(s, year, m) / 60;
             entry.yHours += totalHours;
             entry.mHours += totalHours;
             if (s.shiftAbsence) {
@@ -226,7 +257,7 @@ export async function calculateWorkingStats(
           entry.mSickDays = sickDaySetM.size;
         } else {
           for (const s of shifts) {
-            entry.yHours += totalShiftMin(s) / 60;
+            entry.yHours += shiftMinutesForMonth(s, year, m) / 60;
             if (s.shiftAbsence) {
               sickDaySet.add(
                 `${s.start.getFullYear()}${s.start.getMonth()}${s.start.getDate()}`
