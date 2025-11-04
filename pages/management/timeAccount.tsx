@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Group, Loader, Select, Table, Title } from '@mantine/core';
 import { IconCalendar } from '@tabler/icons-react';
-import { WorkingStatsEntry } from '@/lib/user';
 import ManagementLayout from '@/layouts/managementLayout';
+import { WorkingStatsEntry } from '@/lib/timeAccount';
 
 export default function TimeAccountSimple() {
   const today = new Date();
