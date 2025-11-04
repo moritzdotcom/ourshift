@@ -95,11 +95,12 @@ export async function calculateWorkingStats(
 ): Promise<WorkingStatsEntry[]> {
   const boy = new Date(year, 0, 0);
   const eoy = new Date(year + 1, 0, 0);
+  const eotf = new Date(year, month + 1, 0);
 
   const users = await prisma.user.findMany({
     where: {
       isActive: true,
-      employmentStart: { lte: eoy },
+      employmentStart: { lte: eotf },
       OR: [{ terminationDate: null }, { terminationDate: { gte: boy } }],
     },
     select: {
@@ -108,7 +109,7 @@ export async function calculateWorkingStats(
       lastName: true,
       shifts: {
         where: {
-          start: { lte: eoy },
+          start: { lte: eotf },
           end: { gte: boy },
         },
         select: {
@@ -124,7 +125,7 @@ export async function calculateWorkingStats(
       },
       contracts: {
         where: {
-          validFrom: { lte: eoy },
+          validFrom: { lte: eotf },
           OR: [{ validUntil: null }, { validUntil: { gte: boy } }],
         },
         select: {
@@ -160,13 +161,15 @@ export async function calculateWorkingStats(
     for (const c of u.contracts) {
       const start = new Date(Math.max(c.validFrom.getTime(), boy.getTime()));
       const end = new Date(
+        c.validUntil ? Math.min(c.validUntil.getTime(), eotf.getTime()) : eotf
+      );
+      const endOfYear = new Date(
         c.validUntil ? Math.min(c.validUntil.getTime(), eoy.getTime()) : eoy
       );
+      const totalMonths = monthsBetweenInclusive(start, endOfYear);
+      entry.yVacationPlan += ((c.vacationDaysAnnual || 0) / 12) * totalMonths;
+
       const months = monthsBetweenInclusive(start, end);
-      console.log(
-        `${u.firstName} ${dateToHuman(start)}-${dateToHuman(end)} ${months}`
-      );
-      entry.yVacationPlan += ((c.vacationDaysAnnual || 0) / 12) * months;
 
       Array.from({ length: months }).forEach((_, i) => {
         const m = start.getMonth() + i;
