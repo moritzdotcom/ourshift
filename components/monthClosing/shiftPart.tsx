@@ -34,14 +34,18 @@ export default function MonthClosingShiftPart({
         part.end
       )}`}
     >
-      <div className="px-1.5 py-0.5 text-[11px] font-semibold truncate">
+      <div className="px-1.5 text-[11px] font-semibold truncate">
         {part.originalShift.user.firstName}
       </div>
-      <div className="px-1.5 py-0.5 text-[11px] font-semibold truncate">
+      <div className="px-1.5 text-[11px] font-semibold truncate">
         {part.code ?? 'Schicht'}
       </div>
       <div className="px-1.5 text-[10px] truncate">
         {timeToHuman(part.start)} - {timeToHuman(part.end)}
+      </div>
+      <div className="px-1.5 text-[10px] truncate">
+        {Math.round((part.end.getTime() - part.start.getTime()) / 60_000) / 60}{' '}
+        Std.
       </div>
 
       {part.heightPx > 59 && (
