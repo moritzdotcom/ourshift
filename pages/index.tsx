@@ -30,6 +30,8 @@ import ManagementEntryButton from '@/components/home/managementEntryButton';
 import { hasRole } from '@/lib/auth';
 import HtmlHead from '@/components/htmlHead';
 import TakeoverShiftList from '@/components/home/takeoverShiftList';
+import { usePushPrefs } from '@/hooks/usePushPrefs';
+import { EnableNotificationsModal } from '@/components/enableNotificationsModal';
 
 export type MyShift = ApiMyShiftResponse['shifts'][number];
 
@@ -52,6 +54,14 @@ function addDays(d: Date, n: number) {
 
 export default function HomePage() {
   const { user, loading: userLoading, error: userError } = useCurrentUser();
+
+  const {
+    loading: loadingPush,
+    hasToken,
+    pushEnabled,
+    refresh,
+  } = usePushPrefs();
+  const [modalOpen, setModalOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [shifts, setShifts] = useState<MyShift[]>([]);
@@ -175,6 +185,17 @@ export default function HomePage() {
     setPastShiftsSlice((prev) => Math.min(prev + 4, pastEarlier.length));
   }
   const canLoadMore = pastShiftsSlice < pastEarlier.length;
+
+  useEffect(() => {
+    if (loadingPush) return;
+
+    // Wenn User Push will, aber noch keinen Token hat und Permission nicht granted -> Modal zeigen
+    const perm =
+      typeof Notification !== 'undefined' ? Notification.permission : 'default';
+    if (pushEnabled && !hasToken && perm !== 'granted') {
+      setModalOpen(true);
+    }
+  }, [loadingPush, hasToken, pushEnabled]);
 
   // Loading & Auth-Zustände
   if (userLoading) {
@@ -357,6 +378,14 @@ export default function HomePage() {
             onCreated={handleChangeReqCreated}
           />
         )}
+
+        <EnableNotificationsModal
+          opened={modalOpen}
+          onClose={async () => {
+            setModalOpen(false);
+            await refresh(); // Token/Prefs neu laden
+          }}
+        />
       </AppShell.Main>
     </AppShell>
   );

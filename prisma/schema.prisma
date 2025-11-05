@@ -32,12 +32,14 @@ model User {
   employmentStart DateTime? // Beginn der Tätigkeit (erstmaliger Eintritt)
   terminationDate DateTime? // Kündigungs- / Austrittsdatum, falls vorhanden
 
-  contracts      DigitalContract[]
-  payRules       PayRule[] // bereits vorhanden (userId in PayRule)
-  shifts         Shift[]
-  changeRequests ChangeRequest[]
-  vacationDays   VacationDay[]
-  shiftAbsences  ShiftAbsence[]
+  contracts              DigitalContract[]
+  payRules               PayRule[] // bereits vorhanden (userId in PayRule)
+  shifts                 Shift[]
+  changeRequests         ChangeRequest[]
+  vacationDays           VacationDay[]
+  shiftAbsences          ShiftAbsence[]
+  pushTokens             PushToken[]
+  notificationPreference NotificationPreference?
 }
 
 model UserCredential {
@@ -188,6 +190,35 @@ model VacationDay {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+}
+
+model PushToken {
+  token     String   @id
+  userId    String
+  platform  String // 'web'
+  ua        String?
+  lastSeen  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model NotificationPreference {
+  userId      String  @id
+  pushEnabled Boolean @default(true)
+  // optional: smsEnabled, waEnabled, quietHoursStart, quietHoursEnd
+  user        User    @relation(fields: [userId], references: [id])
+}
+
+model ShiftNotifyLog {
+  id      String   @id @default(uuid())
+  userId  String
+  shiftId String
+  kind    String // 'preStart' | 'postStart' | 'adminClockIn'
+  sentAt  DateTime @default(now())
+
+  @@unique([userId, shiftId, kind]) // keine Doppelversendungen
 }
 
 enum Role {

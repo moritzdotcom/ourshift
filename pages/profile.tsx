@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Paper,
@@ -11,19 +11,37 @@ import {
   Text,
   Divider,
   Box,
+  Loader,
+  Switch,
 } from '@mantine/core';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { IconHome } from '@tabler/icons-react';
 import HtmlHead from '@/components/htmlHead';
+import { usePushPrefs } from '@/hooks/usePushPrefs';
+import { EnableNotificationsModal } from '@/components/enableNotificationsModal';
+import axios from 'axios';
+import { hasRole } from '@/lib/auth';
 
 export default function ProfilePage() {
   const { user, update, logout, updateCredentials } = useCurrentUser();
+
+  const { loading, hasToken, pushEnabled, setEnabled, refresh } =
+    usePushPrefs();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [testing, setTesting] = useState(false);
 
   // ----------- Persönliche Daten -----------
   const [firstName, setFirstName] = useState(user?.firstName ?? '');
   const [lastName, setLastName] = useState(user?.lastName ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
   const [phone, setPhone] = useState(user?.phone ?? '');
+
+  useEffect(() => {
+    setFirstName(user?.firstName ?? '');
+    setLastName(user?.lastName ?? '');
+    setEmail(user?.email ?? '');
+    setPhone(user?.phone ?? '');
+  }, [user]);
 
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileStatus, setProfileStatus] = useState<null | 'ok' | 'err'>(null);
@@ -229,6 +247,70 @@ export default function ProfilePage() {
             </Stack>
           </form>
         </Stack>
+      </Paper>
+
+      <Paper withBorder radius="lg" p="lg" shadow="xs">
+        <Stack gap="xs">
+          <Title order={4}>Benachrichtigungen</Title>
+          {loading ? (
+            <Loader mt="sm" />
+          ) : (
+            <>
+              <Group mt="sm" justify="space-between">
+                <div>
+                  <Text fw={500}>Schicht-Erinnerungen</Text>
+                  <Text c="dimmed" size="sm">
+                    10 Min vor Schichtbeginn und kurz nach Beginn (falls noch
+                    nicht eingestempelt).
+                  </Text>
+                </div>
+                <Switch
+                  checked={pushEnabled}
+                  onChange={async (e) => {
+                    await setEnabled(e.currentTarget.checked);
+                    await refresh();
+                  }}
+                />
+              </Group>
+
+              {!hasToken && pushEnabled && (
+                <Group mt="md">
+                  <Button onClick={() => setModalOpen(true)}>
+                    Benachrichtigungen einrichten
+                  </Button>
+                  <Text c="dimmed" size="sm">
+                    Noch kein Gerät registriert.
+                  </Text>
+                </Group>
+              )}
+
+              {hasToken && user && hasRole(user, 'ADMIN') && (
+                <Group mt="md">
+                  <Button
+                    loading={testing}
+                    onClick={async () => {
+                      setTesting(true);
+                      try {
+                        await axios.get('/api/push/test');
+                      } finally {
+                        setTesting(false);
+                      }
+                    }}
+                  >
+                    Test-Benachrichtigung senden
+                  </Button>
+                </Group>
+              )}
+            </>
+          )}
+        </Stack>
+        <EnableNotificationsModal
+          opened={modalOpen}
+          onClose={async () => {
+            setModalOpen(false);
+            await refresh();
+          }}
+        />
       </Paper>
 
       {/* Passwort ändern */}

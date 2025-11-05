@@ -4,8 +4,11 @@ import '@mantine/dates/styles.css';
 import { MantineProvider } from '@mantine/core';
 import type { AppProps } from 'next/app';
 import { Toaster } from 'react-hot-toast';
+import { useRegisterMessagingSW } from '@/hooks/useRegisterMessagingSW';
 
 export default function App({ Component, pageProps }: AppProps) {
+  useRegisterMessagingSW();
+
   return (
     <MantineProvider>
       <Component {...pageProps} />
