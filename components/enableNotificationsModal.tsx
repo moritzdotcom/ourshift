@@ -3,6 +3,7 @@ import { IconBell, IconCheck } from '@tabler/icons-react';
 import { usePushRegistration } from '@/hooks/usePushRegistration';
 import { usePushPrefs } from '@/hooks/usePushPrefs';
 import { useState } from 'react';
+import { markPushPromptDone, snoozePushPrompt } from '@/lib/pushPromptGate';
 
 export function EnableNotificationsModal({
   opened,
@@ -45,7 +46,13 @@ export function EnableNotificationsModal({
         </Text>
 
         <Group justify="flex-end" mt="sm">
-          <Button variant="default" onClick={onClose}>
+          <Button
+            variant="default"
+            onClick={() => {
+              snoozePushPrompt(24 * 60 * 60 * 1000); // 24h Snooze (anpassen nach Wunsch)
+              onClose();
+            }}
+          >
             Später
           </Button>
           <Button
@@ -57,7 +64,10 @@ export function EnableNotificationsModal({
               try {
                 const ok = await register(); // holt ggf. Permission ODER nur Token
                 await refresh(); // prefs/hasToken neu einlesen
-                if (ok) onClose();
+                if (ok) {
+                  markPushPromptDone();
+                  onClose();
+                }
               } finally {
                 setBusy(false);
               }

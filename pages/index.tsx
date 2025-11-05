@@ -32,6 +32,7 @@ import HtmlHead from '@/components/htmlHead';
 import TakeoverShiftList from '@/components/home/takeoverShiftList';
 import { usePushPrefs } from '@/hooks/usePushPrefs';
 import { EnableNotificationsModal } from '@/components/enableNotificationsModal';
+import { shouldAutoOpenPushPrompt } from '@/lib/pushPromptGate';
 
 export type MyShift = ApiMyShiftResponse['shifts'][number];
 
@@ -192,9 +193,12 @@ export default function HomePage() {
     // Wenn User Push will, aber noch keinen Token hat und Permission nicht granted -> Modal zeigen
     const perm =
       typeof Notification !== 'undefined' ? Notification.permission : 'default';
-    if (pushEnabled && !hasToken && perm !== 'granted') {
-      setModalOpen(true);
-    }
+    const canOpen = shouldAutoOpenPushPrompt({
+      pushEnabled,
+      hasToken,
+      permission: perm,
+    });
+    if (canOpen) setModalOpen(true);
   }, [loadingPush, hasToken, pushEnabled]);
 
   // Loading & Auth-Zustände
