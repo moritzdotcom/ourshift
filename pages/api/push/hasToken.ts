@@ -17,8 +17,6 @@ export default async function handler(
   res.json({
     ok: true,
     hasToken: Boolean(token),
-    pushEnabled: pref?.pushEnabled ?? true,
-    permission:
-      typeof Notification !== 'undefined' ? Notification.permission : undefined,
+    pushEnabled: pref?.pushEnabled ?? false,
   });
 }

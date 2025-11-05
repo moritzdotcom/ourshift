@@ -1,6 +1,7 @@
 import { Modal, Text, Button, Stack, Group } from '@mantine/core';
 import { IconBell, IconCheck } from '@tabler/icons-react';
 import { usePushRegistration } from '@/hooks/usePushRegistration';
+import { usePushPrefs } from '@/hooks/usePushPrefs';
 import { useState } from 'react';
 
 export function EnableNotificationsModal({
@@ -11,9 +12,14 @@ export function EnableNotificationsModal({
   onClose: () => void;
 }) {
   const { supported, permission, register } = usePushRegistration();
+  const { hasToken, refresh } = usePushPrefs();
   const [busy, setBusy] = useState(false);
 
-  const canEnable = supported && permission !== 'granted';
+  // Vollständig eingerichtet = supported + Permission granted + Token vorhanden
+  const fullySetup = supported && permission === 'granted' && !!hasToken;
+
+  // Button soll nur dann disabled sein, wenn es wirklich schon fertig eingerichtet ist
+  const canEnable = supported && !fullySetup && permission !== 'denied';
 
   return (
     <Modal
@@ -37,6 +43,7 @@ export function EnableNotificationsModal({
           Du kannst das jederzeit im Profil wieder deaktivieren. Die Nachrichten
           kommen auch an, wenn der Tab geschlossen ist.
         </Text>
+
         <Group justify="flex-end" mt="sm">
           <Button variant="default" onClick={onClose}>
             Später
@@ -48,16 +55,18 @@ export function EnableNotificationsModal({
             onClick={async () => {
               setBusy(true);
               try {
-                const ok = await register();
+                const ok = await register(); // holt ggf. Permission ODER nur Token
+                await refresh(); // prefs/hasToken neu einlesen
                 if (ok) onClose();
               } finally {
                 setBusy(false);
               }
             }}
           >
-            Benachrichtigungen aktivieren
+            {fullySetup ? 'Bereit' : 'Benachrichtigungen aktivieren'}
           </Button>
         </Group>
+
         {!supported && (
           <Text c="red">Dein Browser/Device unterstützt Web-Push nicht.</Text>
         )}

@@ -27,20 +27,13 @@ export function usePushRegistration() {
   }, []);
 
   const register = useCallback(async () => {
-    console.log('[fb cfg]', {
-      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      sender: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-      vapid: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY?.slice(0, 8) + '…',
-    });
     try {
       if (!supported) return false;
       if (typeof window === 'undefined' || !('Notification' in window))
         return false;
       if (!('serviceWorker' in navigator)) return false;
 
-      // 1) SW sicher registrieren
+      // SW Registrierung sicherstellen
       let registration = await navigator.serviceWorker.getRegistration('/');
       if (!registration) {
         registration = await navigator.serviceWorker.register(
@@ -49,22 +42,28 @@ export function usePushRegistration() {
         );
       }
 
-      // 2) Permission anfragen
-      const status = await window.Notification.requestPermission();
-      setPermission(status);
-      if (status !== 'granted') return false;
+      // Permission nur anfragen, wenn noch nicht granted
+      let status: NotificationPermission =
+        window.Notification.permission ?? 'default';
+      if (status !== 'granted') {
+        status = await window.Notification.requestPermission();
+        setPermission(status);
+        if (status !== 'granted') return false;
+      } else {
+        setPermission(status);
+      }
 
-      // 3) Token holen (an *diese* Registrierung binden)
+      // Token holen (an diese SW-Registration binden)
       const messaging = getFirebaseMessaging();
       const t = await getToken(messaging, {
         vapidKey: VAPID,
         serviceWorkerRegistration: registration,
-      });
+      }).catch(() => null);
       if (!t) return false;
 
       setToken(t);
 
-      // 4) Registrieren
+      // Server registrieren
       await fetch('/api/push/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -76,8 +75,8 @@ export function usePushRegistration() {
       });
 
       return true;
-    } catch (err) {
-      console.error('[push] register error', err);
+    } catch (e) {
+      console.error('[push] register error', e);
       return false;
     }
   }, [supported]);
