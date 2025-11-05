@@ -33,7 +33,8 @@ export default function TimeAccountSimple() {
     };
   }, [year, month]);
 
-  const fmt = (n: number) => Intl.NumberFormat('de').format(n);
+  const fmt = (n: number) =>
+    Intl.NumberFormat('de', { maximumFractionDigits: 1 }).format(n);
 
   function monthLabel(y: number, m: number) {
     return new Date(y, m, 1).toLocaleDateString('de', {
