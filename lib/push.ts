@@ -59,7 +59,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
 
 export async function sendPushToAdmins(payload: PushPayload) {
   const admins = await prisma.user.findMany({
-    where: { role: 'ADMIN', isActive: true },
+    where: { role: 'ADMIN' },
     select: { id: true },
   });
   let sent = 0,
