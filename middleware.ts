@@ -78,10 +78,10 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    // Alle Routen außer:
-    // - /api (API-Routen nicht von dieser Middleware erfasst)
-    // - /_next/static, /_next/image (Next intern)
-    // - /favicon.ico, /logo.png, /images/*, /fonts/* (statische Assets)
-    '/((?!api|_next/static|_next/image|favicon.ico|logo.png|images|fonts).*)',
+    // Alles außer:
+    // - /api (API-Routen)
+    // - Next intern
+    // - diverse statische/PWA Dateien
+    '/((?!api|_next/static|_next/image|favicon.ico|logo.png|images|fonts|icons|firebase-messaging-sw\\.js|manifest\\.json|site\\.webmanifest|robots\\.txt|sitemap\\.xml|apple-touch-icon\\.png).*)',
   ],
 };
