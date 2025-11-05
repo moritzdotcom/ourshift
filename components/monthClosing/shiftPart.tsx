@@ -5,6 +5,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { IconClockEdit } from '@tabler/icons-react';
 import MonthClosingBackfillModal from './backfillModal';
 import { MonthClosingShift } from '@/pages/management/monthClosing';
+import { useMemo } from 'react';
 
 export default function MonthClosingShiftPart({
   part,
@@ -16,13 +17,29 @@ export default function MonthClosingShiftPart({
   const [backfillOpen, { open: openBackfill, close: closeBackfill }] =
     useDisclosure(false);
 
+  const { color, code, isSick } = useMemo(() => {
+    if (part.originalShift.shiftAbsence)
+      return {
+        color: 'bg-red-50 border-red-700 text-red-700',
+        code: 'K',
+        isSick: true,
+      };
+    if (part.isStamped)
+      return {
+        color: 'bg-emerald-50 border-emerald-700 text-emerald-700',
+        code: part.code ?? 'Schicht',
+        isSick: false,
+      };
+    return {
+      color: 'bg-zinc-100 border-zinc-600 text-zinc-600',
+      code: part.code ?? 'Schicht',
+      isSick: false,
+    };
+  }, [part]);
+
   return (
     <div
-      className={`absolute rounded-md shadow-sm border overflow-hidden ${
-        part.isStamped
-          ? 'bg-emerald-100 border-emerald-700 text-emerald-700'
-          : 'bg-zinc-200 border-zinc-600 text-zinc-600'
-      }`}
+      className={`absolute rounded-md shadow-sm border overflow-hidden ${color}`}
       style={{
         top: part.topPx,
         height: part.heightPx,
@@ -30,16 +47,12 @@ export default function MonthClosingShiftPart({
         width: `${part.widthPct}%`,
         opacity: part.isStamped ? 1 : 0.6,
       }}
-      title={`${part.code ?? ''} ${timeToHuman(part.start)}-${timeToHuman(
-        part.end
-      )}`}
+      title={`${code} ${timeToHuman(part.start)}-${timeToHuman(part.end)}`}
     >
       <div className="px-1.5 text-[11px] font-semibold truncate">
         {part.originalShift.user.firstName}
       </div>
-      <div className="px-1.5 text-[11px] font-semibold truncate">
-        {part.code ?? 'Schicht'}
-      </div>
+      <div className="px-1.5 text-[11px] font-semibold truncate">{code}</div>
       <div className="px-1.5 text-[10px] truncate">
         {timeToHuman(part.start)} - {timeToHuman(part.end)}
       </div>
@@ -48,7 +61,7 @@ export default function MonthClosingShiftPart({
         Std.
       </div>
 
-      {part.heightPx > 59 && (
+      {part.heightPx > 59 && !isSick && (
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
           <Tooltip
             label={part.isStamped ? 'Zeiten korrigieren' : 'Zeiten Nachtragen'}
