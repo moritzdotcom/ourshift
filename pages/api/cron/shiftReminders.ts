@@ -2,26 +2,41 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prismadb';
 import { sendPushToUser } from '@/lib/push';
 
-// Für Vercel Cron als GET
+// Konfigurierbar, passend zum Cron-Intervall:
+const CRON_INTERVAL_MIN = 5;
+
+// Pre-Reminder: 10 Minuten vor Start, aber Fenster ±(CRON_INTERVAL_MIN/2)
+const PRE_TARGET_MIN = 10;
+const PRE_DELTA_MIN = Math.ceil(CRON_INTERVAL_MIN / 2); // z.B. 3
+
+// Post-Reminder: bis zu CRON_INTERVAL_MIN Minuten nach Start
+const POST_WINDOW_MIN = CRON_INTERVAL_MIN; // z.B. 5
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const auth = req.headers.authorization;
+  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).end('Unauthorized');
+  }
+
   const now = new Date();
+  const plus = (min: number) => new Date(now.getTime() + min * 60_000);
+  const minus = (min: number) => new Date(now.getTime() - min * 60_000);
 
-  // Helper: Fenster
-  const minFromNow = (min: number) => new Date(now.getTime() + min * 60_000);
+  // Pre: [10 - Δ, 10 + Δ] Minuten in der Zukunft
+  const preFrom = plus(PRE_TARGET_MIN - PRE_DELTA_MIN); // now+7m
+  const preTo = plus(PRE_TARGET_MIN + PRE_DELTA_MIN); // now+13m
 
-  const preStartFrom = minFromNow(9);
-  const preStartTo = minFromNow(10);
+  // Post: [now - POST_WINDOW_MIN, now]
+  const postFrom = minus(POST_WINDOW_MIN); // now-5m
+  const postTo = now;
 
-  const postStartFrom = minFromNow(1);
-  const postStartTo = minFromNow(2);
-
-  // Vor-Reminder: Schichten die gleich starten & noch nicht eingestempelt und noch nicht benachrichtigt
+  // --- PRE REMINDER ---
   const preCandidates = await prisma.shift.findMany({
     where: {
-      start: { gte: preStartFrom, lte: preStartTo },
+      start: { gte: preFrom, lte: preTo },
       clockIn: null,
       shiftAbsence: null,
     },
@@ -34,7 +49,7 @@ export default async function handler(
   });
 
   for (const s of preCandidates) {
-    const already = await prisma.shiftNotifyLog.findUnique({
+    const sent = await prisma.shiftNotifyLog.findUnique({
       where: {
         userId_shiftId_kind: {
           userId: s.userId,
@@ -43,7 +58,7 @@ export default async function handler(
         },
       },
     });
-    if (already) continue;
+    if (sent) continue;
 
     const startLabel = new Date(s.start).toLocaleTimeString('de-DE', {
       hour: '2-digit',
@@ -54,7 +69,7 @@ export default async function handler(
       body: `${
         s.code?.label || 'Schicht'
       } • ${startLabel} - bitte einstempeln.`,
-      link: `/kiosk?shift=${s.id}`,
+      link: '/',
       tag: `shift-${s.id}`,
     });
 
@@ -63,10 +78,10 @@ export default async function handler(
     });
   }
 
-  // Nach-Reminder: gerade gestartet, noch kein clockIn, noch nicht post-reminded
+  // --- POST REMINDER ---
   const postCandidates = await prisma.shift.findMany({
     where: {
-      start: { gte: postStartFrom, lte: postStartTo },
+      start: { gte: postFrom, lte: postTo },
       clockIn: null,
       shiftAbsence: null,
     },
@@ -79,7 +94,7 @@ export default async function handler(
   });
 
   for (const s of postCandidates) {
-    const already = await prisma.shiftNotifyLog.findUnique({
+    const sent = await prisma.shiftNotifyLog.findUnique({
       where: {
         userId_shiftId_kind: {
           userId: s.userId,
@@ -88,12 +103,12 @@ export default async function handler(
         },
       },
     });
-    if (already) continue;
+    if (sent) continue;
 
     await sendPushToUser(s.userId, {
       title: 'Schicht hat begonnen',
-      body: `Bitte jetzt einstempeln.`,
-      link: `/kiosk?shift=${s.id}`,
+      body: 'Bitte jetzt einstempeln.',
+      link: '/',
       tag: `shift-${s.id}`,
     });
 
