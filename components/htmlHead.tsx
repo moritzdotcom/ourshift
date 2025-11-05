@@ -27,7 +27,11 @@ export default function HtmlHead({
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content="https://www.ourshift.de/logo-og.jpg" />
+      <meta property="og:image:width" content="1000" />
+      <meta property="og:image:height" content="500" />
+      <meta property="og:image:alt" content="OurShift - Logo" />
       <meta property="og:url" content="https://www.ourshift.de/" />
+
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
