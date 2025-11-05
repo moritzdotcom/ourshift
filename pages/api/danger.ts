@@ -6,7 +6,7 @@ export default async function handle(
   res: NextApiResponse
 ) {
   const shifts = await prisma.shift.findMany({
-    where: { end: { lte: new Date() }, clockIn: null, clockOut: null },
+    where: { code: { code: 'ND' }, clockIn: null, clockOut: null },
   });
 
   const updated = await prisma.$transaction(
