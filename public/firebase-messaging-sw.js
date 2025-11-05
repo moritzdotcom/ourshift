@@ -17,19 +17,20 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage((payload) => {
-  const n = payload.notification || {};
-  const data = payload.data || {};
-  // Support for webpush.fcmOptions.link via data.link
-  const options = {
-    body: n.body,
-    icon: n.icon || '/icons/favicon-192x192.png',
-    badge: n.badge || '/icons/badge-72.png',
-    tag: data.tag || undefined,
+messaging.onBackgroundMessage(({ data }) => {
+  const title = data?.title || 'Benachrichtigung';
+  const body = data?.body || '';
+  const link = data?.link || '/';
+  const tag = data?.tag || undefined;
+
+  self.registration.showNotification(title, {
+    body,
+    icon: '/icons/push-192.png',
+    badge: '/icons/badge-72.png',
+    tag, // gleicher tag => ersetzt statt duplizieren
     renotify: true,
-    data: { link: data.link || '/' },
-  };
-  self.registration.showNotification(n.title || 'Benachrichtigung', options);
+    data: { link },
+  });
 });
 
 self.addEventListener('notificationclick', (event) => {

@@ -21,19 +21,14 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
   // FCM Webpush
   const res = await adminMessaging.sendEachForMulticast({
     tokens: tokens.map((t) => t.token),
-    notification: { title: payload.title, body: payload.body },
     data: {
-      ...(payload.link ? { link: payload.link } : {}),
-      ...(payload.tag ? { tag: payload.tag } : {}),
+      title: payload.title,
+      body: payload.body,
+      link: payload.link || '/',
+      tag: payload.tag || '',
     },
     webpush: {
       fcmOptions: payload.link ? { link: payload.link } : undefined,
-      notification: {
-        tag: payload.tag,
-        renotify: true,
-        icon: '/icons/favicon-192x192.png',
-        badge: '/icons/badge-72.png',
-      },
     },
   });
 
