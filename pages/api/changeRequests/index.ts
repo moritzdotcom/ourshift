@@ -3,6 +3,7 @@ import prisma from '@/lib/prismadb';
 import { getCurrentUser, hasRole } from '@/lib/auth';
 import { Prisma } from '@/generated/prisma';
 import { isValidStatus } from '@/lib/changeRequest';
+import { trySendPushToAdmins } from '@/lib/push';
 
 export default async function handle(
   req: NextApiRequest,
@@ -112,7 +113,21 @@ async function handlePOST(
         clockIn: clockInDate,
         clockOut: clockOutDate,
       },
+      include: { user: { select: { firstName: true } } },
     });
+
+    await trySendPushToAdmins(
+      {
+        title: 'Änderungs Anfrage',
+        body: `Neue Anfrage von ${cr.user.firstName}.`,
+        link: `/management/requests`,
+        tag: `newChangeRequest-${cr.id}`,
+      },
+      cr.userId,
+      cr.shiftId,
+      'newChangeRequest',
+      'MANAGER'
+    );
 
     return res.status(201).json(cr);
   }

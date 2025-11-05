@@ -1,6 +1,6 @@
 import { getCurrentUserId } from '@/lib/auth';
 import prisma from '@/lib/prismadb';
-import { sendPushToAdmins } from '@/lib/push';
+import { trySendPushToAdmins } from '@/lib/push';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handle(
@@ -43,31 +43,19 @@ async function handlePOST(
   });
 
   // Admin-Notify (einmal pro Shift/User)
-  const already = await prisma.shiftNotifyLog.findUnique({
-    where: {
-      userId_shiftId_kind: {
-        userId: updated.userId,
-        shiftId: updated.id,
-        kind: 'adminClockIn',
-      },
-    },
-  });
-  if (!already) {
-    const userName = updated.user.firstName || 'Benutzer';
-    await sendPushToAdmins({
+  const userName = updated.user.firstName || 'Benutzer';
+  await trySendPushToAdmins(
+    {
       title: 'Einstempelung',
       body: `${userName} hat sich eingestempelt.`,
       link: `/`,
       tag: `clockin-${updated.id}`,
-    });
-    await prisma.shiftNotifyLog.create({
-      data: {
-        userId: updated.userId,
-        shiftId: updated.id,
-        kind: 'adminClockIn',
-      },
-    });
-  }
+    },
+    updated.userId,
+    updated.id,
+    'adminClockIn',
+    'ADMIN'
+  );
 
   return res.status(201).json(updated);
 }

@@ -1,5 +1,6 @@
 import prisma from '@/lib/prismadb';
 import { adminMessaging } from '@/lib/firebase/admin';
+import { Role } from '@/generated/prisma';
 
 type PushPayload = {
   title: string;
@@ -57,9 +58,9 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
   return { sent: res.successCount, removed: toDelete.length };
 }
 
-export async function sendPushToAdmins(payload: PushPayload) {
+export async function sendPushToAdmins(payload: PushPayload, role: Role) {
   const admins = await prisma.user.findMany({
-    where: { role: 'ADMIN' },
+    where: { role },
     select: { id: true },
   });
   let sent = 0,
@@ -70,4 +71,32 @@ export async function sendPushToAdmins(payload: PushPayload) {
     removed += r.removed;
   }
   return { sent, removed };
+}
+
+export async function trySendPushToAdmins(
+  payload: PushPayload,
+  userId: string,
+  shiftId: string,
+  kind: string,
+  role: Role
+) {
+  const already = await prisma.shiftNotifyLog.findUnique({
+    where: {
+      userId_shiftId_kind: {
+        userId,
+        shiftId,
+        kind,
+      },
+    },
+  });
+  if (!already) {
+    await sendPushToAdmins(payload, role);
+    await prisma.shiftNotifyLog.create({
+      data: {
+        userId,
+        shiftId,
+        kind,
+      },
+    });
+  }
 }
