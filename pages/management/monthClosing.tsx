@@ -1,6 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Group, Title, Select, Center, Loader } from '@mantine/core';
-import { IconCalendar } from '@tabler/icons-react';
+import {
+  Group,
+  Title,
+  Select,
+  Center,
+  Loader,
+  RingProgress,
+  ActionIcon,
+  Text,
+  Badge,
+  Stack,
+} from '@mantine/core';
+import { IconCalendar, IconCheck } from '@tabler/icons-react';
 import axios from 'axios';
 import ManagementLayout from '@/layouts/managementLayout';
 import { ApiGetSimpleUsersResponse } from '../api/users';
@@ -8,6 +19,8 @@ import { ApiGetShiftsResponse } from '../api/shifts';
 import { dateToISO } from '@/lib/dates';
 import { ChangeStatus, AbsenceReason } from '@/generated/prisma';
 import MonthClosingGrid from '@/components/monthClosing/grid';
+import MonthClosingHeader from '@/components/monthClosing/header';
+import { useMonthClosingStats } from '@/hooks/useMonthClosingStats';
 
 export type MonthClosingShift = {
   id: string;
@@ -79,42 +92,17 @@ export default function MonthClosingPage() {
     }
   }
 
-  function monthLabel(y: number, m: number) {
-    return new Date(y, m, 1).toLocaleDateString('de', {
-      month: 'long',
-      year: 'numeric',
-    });
-  }
-
   return (
     <ManagementLayout>
       <div className="p-6 space-y-6">
         {/* Header */}
-        <Group justify="space-between">
-          <Title order={2}>Monatsabschluss</Title>
-          <Group>
-            {/* Monat/Jahr Auswahl */}
-            <Select
-              leftSection={<IconCalendar size={16} />}
-              value={`${year}-${month}`}
-              data={Array.from({ length: 24 }).map((_, i) => {
-                const d = new Date();
-                d.setDate(15);
-                d.setMonth(d.getMonth() - i);
-                return {
-                  value: `${d.getFullYear()}-${d.getMonth()}`,
-                  label: monthLabel(d.getFullYear(), d.getMonth()),
-                };
-              })}
-              onChange={(val) => {
-                if (!val) return;
-                const [y, m] = val.split('-').map(Number);
-                setYear(y);
-                setMonth(m);
-              }}
-            />
-          </Group>
-        </Group>
+        <MonthClosingHeader
+          shifts={shifts}
+          year={year}
+          month={month}
+          setYear={setYear}
+          setMonth={setMonth}
+        />
         {loading ? (
           <Center>
             <Loader />
