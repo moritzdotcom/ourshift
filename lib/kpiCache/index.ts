@@ -5,8 +5,8 @@ import { recalcMonthDashboardFull } from './dashboard';
 import { recalcMonthPayroll } from './payroll';
 
 export async function getDepsUpdatedAtForMonth(y: number, m: number) {
-  const start = new Date(Date.UTC(y, m, 1, 0, 0, 0));
-  const end = new Date(Date.UTC(y, m + 1, 1, 0, 0, 0));
+  const start = new Date(Date.UTC(y, m, 1, 0, 0, 0, 0));
+  const end = new Date(Date.UTC(y, m + 1, 0, 23, 59, 59, 999));
 
   const [shiftMax, prMax, contractMax, userMax, holidayMax] = await Promise.all(
     [
@@ -82,12 +82,12 @@ export async function kpiGetUsers() {
 
 export type KpiGetShifts = Awaited<ReturnType<typeof kpiGetShifts>>;
 export async function kpiGetShifts(y: number, m: number) {
-  const start = new Date(y, m, 1);
-  const end = new Date(y, m + 1, 1);
+  const start = new Date(y, m, 1, 0, 0, 0, 0);
+  const end = new Date(y, m + 1, 0, 23, 59, 59, 999);
   return await prisma.shift.findMany({
     where: {
-      start: { gte: start },
-      end: { lte: end },
+      start: { lte: end },
+      end: { gte: start },
     },
     include: {
       code: {
@@ -106,8 +106,8 @@ export async function kpiGetShifts(y: number, m: number) {
 
 export type KpiGetHolidays = Awaited<ReturnType<typeof kpiGetHolidays>>;
 export async function kpiGetHolidays(y: number, m: number) {
-  const start = new Date(y, m, 1);
-  const end = new Date(y, m + 1, 1);
+  const start = new Date(y, m, 1, 0, 0, 0, 0);
+  const end = new Date(y, m + 1, 0, 23, 59, 59, 999);
   return await prisma.holiday.findMany({
     where: {
       AND: [{ date: { gte: start } }, { date: { lte: end } }],
@@ -117,8 +117,8 @@ export async function kpiGetHolidays(y: number, m: number) {
 
 export type KpiGetVacationDays = Awaited<ReturnType<typeof kpiGetVacationDays>>;
 export async function kpiGetVacationDays(y: number, m: number) {
-  const start = new Date(y, m, 1);
-  const end = new Date(y, m + 1, 1);
+  const start = new Date(y, m, 1, 0, 0, 0, 0);
+  const end = new Date(y, m + 1, 0, 23, 59, 59, 999);
   return await prisma.vacationDay.findMany({
     where: {
       AND: [{ date: { gte: start } }, { date: { lte: end } }],
