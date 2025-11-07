@@ -33,44 +33,91 @@ function hourlyFromContract(
   }
   return null;
 }
+
 function splitShiftByDay(
   start: Date,
   end: Date
-): { day: string; fromMin: number; toMin: number }[] {
-  const parts: { day: string; fromMin: number; toMin: number }[] = [];
+): { day: string; segStart: Date; segEnd: Date }[] {
+  const parts: { day: string; segStart: Date; segEnd: Date }[] = [];
   let cur = start;
   while (cur < end) {
-    const dayStart = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate());
-    const nextDay = new Date(dayStart);
-    nextDay.setDate(dayStart.getDate() + 1);
+    const dayStart = new Date(
+      cur.getFullYear(),
+      cur.getMonth(),
+      cur.getDate(),
+      0,
+      0,
+      0,
+      0
+    );
+    const nextDay = new Date(
+      dayStart.getFullYear(),
+      dayStart.getMonth(),
+      dayStart.getDate() + 1,
+      0,
+      0,
+      0,
+      0
+    );
     const segStart = cur;
     const segEnd = end < nextDay ? end : nextDay;
-    parts.push({
-      day: dayISO(dayStart),
-      fromMin: segStart.getHours() * 60 + segStart.getMinutes(),
-      toMin: segEnd.getHours() * 60 + segEnd.getMinutes(),
-    });
+    parts.push({ day: dayISO(dayStart), segStart, segEnd });
     cur = segEnd;
   }
   return parts;
 }
-function overlapMinutesWithWindow(
-  fromMin: number,
-  toMin: number,
-  winStart: number | null,
-  winEnd: number | null
-): number {
-  if (winStart == null || winEnd == null) return Math.max(0, toMin - fromMin); // ganztägig
-  if (winEnd < winStart) {
-    // über Mitternacht
-    return (
-      overlapMinutesWithWindow(fromMin, toMin, 0, winEnd) +
-      overlapMinutesWithWindow(fromMin, toMin, winStart, 1440)
-    );
+
+function dayBoundsLocal(dayISO: string) {
+  const [y, m, d] = dayISO.split('-').map(Number);
+  // Lokale Mitternacht – Date kümmert sich um Offset
+  const start = new Date(y, m - 1, d, 0, 0, 0, 0);
+  const end = new Date(y, m - 1, d + 1, 0, 0, 0, 0); // nächste lokale Mitternacht
+  return { start, end }; // kann 23/24/25h sein
+}
+
+function addWallMinutes(base: Date, mins: number) {
+  const dt = new Date(base.getTime());
+  dt.setMinutes(dt.getMinutes() + mins); // korrekt über DST-Grenzen
+  return dt;
+}
+
+/** Liefert konkrete Fenster-Intervalle [start,end) in absoluten Dates für diesen Tag */
+function windowsForDay(
+  dayISO: string,
+  winStartMin?: number | null,
+  winEndMin?: number | null
+): Array<[Date, Date]> {
+  const { start: dayStart, end: dayEnd } = dayBoundsLocal(dayISO);
+
+  // Ganztägig
+  if (winStartMin == null || winEndMin == null) {
+    return [[dayStart, dayEnd]];
   }
-  const s = Math.max(fromMin, winStart);
-  const e = Math.min(toMin, winEnd);
-  return Math.max(0, e - s);
+
+  // "00:00" als Endwert -> Ende = Mitternacht nächsten Tages
+  const endMin = winEndMin === 0 ? 24 * 60 : winEndMin;
+
+  if (endMin <= winStartMin) {
+    // über Mitternacht innerhalb desselben "Tagesfensters": zwei Intervalle
+    const aStart = dayStart;
+    const aEnd = addWallMinutes(dayStart, endMin);
+    const bStart = addWallMinutes(dayStart, winStartMin);
+    const bEnd = dayEnd;
+    return [
+      [aStart, aEnd],
+      [bStart, bEnd],
+    ];
+  } else {
+    const wStart = addWallMinutes(dayStart, winStartMin);
+    const wEnd = addWallMinutes(dayStart, endMin);
+    return [[wStart, wEnd]];
+  }
+}
+
+function overlapMinutesAbs(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) {
+  const start = Math.max(aStart.getTime(), bStart.getTime());
+  const end = Math.min(aEnd.getTime(), bEnd.getTime());
+  return Math.max(0, Math.round((end - start) / 60000));
 }
 
 function ruleActiveOnDay(
@@ -209,12 +256,15 @@ export function buildPayrollForMonth({
           ruleActiveOnDay(r, p.day, holidays)
         );
         for (const r of dayRules) {
-          const ov = overlapMinutesWithWindow(
-            p.fromMin,
-            p.toMin === 0 ? 1440 : p.toMin,
+          const wins = windowsForDay(
+            p.day,
             r.windowStartMin ?? null,
-            r.windowEndMin === 0 ? 1440 : r.windowEndMin ?? null
+            r.windowEndMin ?? null
           );
+          let ov = 0;
+          for (const [wStart, wEnd] of wins) {
+            ov += overlapMinutesAbs(p.segStart, p.segEnd, wStart, wEnd);
+          }
           if (ov <= 0) continue;
           if (hourly == null || r.percent == null) continue;
 
@@ -270,44 +320,6 @@ export function buildPayrollForMonth({
   }
 
   return rows;
-}
-
-export function downloadCSV(filename: string, rows: PayrollRow[]) {
-  const bonusName = rows.find((r) => r.bonus)?.bonus?.name;
-  const header = [
-    'Mitarbeiter',
-    'Gesamtstunden',
-    'Grundgehalt (Monat)',
-    'Grundvergütung (Std * Satz)',
-    'Zuschläge (Summe)',
-    `${bonusName || 'Sonstige Bonuszahlungen'} (Summe)`,
-    'Brutto gesamt',
-  ];
-  const lines = [header.join(';')];
-
-  for (const r of rows) {
-    lines.push(
-      [
-        r.userName,
-        (r.monthMinutes / 60).toFixed(2).replace('.', ','),
-        (r.baseSalaryCents / 100).toFixed(2).replace('.', ','),
-        (r.baseFromHoursCents / 100).toFixed(2).replace('.', ','),
-        (r.supplementsTotalCents / 100).toFixed(2).replace('.', ','),
-        ((r.bonus?.amountCents || 0) / 100).toFixed(2).replace('.', ','),
-        (r.grossCents / 100).toFixed(2).replace('.', ','),
-      ].join(';')
-    );
-  }
-
-  const blob = new Blob([lines.join('\n')], {
-    type: 'text/csv;charset=utf-8;',
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 function centsToEuro(n: number | undefined | null) {
