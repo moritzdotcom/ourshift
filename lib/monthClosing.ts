@@ -122,6 +122,19 @@ function assignColumnsForGroup(group: ShiftPart[]) {
 }
 
 /** 3) Tageslayout komplett: Gruppen bilden, Spalten zuweisen, Positionen rechnen */
+function wallMinutes(d: Date) {
+  return d.getHours() * 60 + d.getMinutes(); // reine Wanduhr, ignoriert DST-Länge
+}
+
+function wallSpanMinutes(start: Date, end: Date) {
+  // deine ShiftParts sind tagesweise gesplittet -> end ist nie vor start
+  let a = wallMinutes(start);
+  let b = wallMinutes(end);
+  // "24:00" als lokales Tagesende (in Date ist das 00:00 des Folgetags)
+  if (b === 0) b = 1440;
+  return Math.max(1, b - a);
+}
+
 function layoutDay(
   parts: ShiftPart[],
   headerHeight: number,
@@ -130,22 +143,29 @@ function layoutDay(
   const groups = buildOverlapGroups(parts);
   for (const g of groups) assignColumnsForGroup(g);
 
-  // Positionen (Top/Height/Left/Width)
   const minuteHeight = hourHeight / 60;
+
   for (const p of parts) {
-    const topMin = p.start.getHours() * 60 + p.start.getMinutes();
+    // 1) Reale Dauer (für Logik/Tooltips/Abrechnung)
     const durMin = Math.max(
       1,
       Math.round((p.end.getTime() - p.start.getTime()) / 60000)
     );
     p.durationMin = durMin;
-    p.topPx = headerHeight + topMin * minuteHeight;
-    p.heightPx = Math.max(6, durMin * minuteHeight);
 
+    // 2) Visuelle Position/Höhe auf Basis der Wanduhr
+    const topMinWall = wallMinutes(p.start);
+    const durMinWall = wallSpanMinutes(p.start, p.end);
+
+    p.topPx = headerHeight + topMinWall * minuteHeight;
+    p.heightPx = Math.max(6, durMinWall * minuteHeight);
+
+    // Spaltenbreite/left wie gehabt
     const total = Math.max(1, p.cols);
     p.leftPct = (p.col / total) * 100;
     p.widthPct = (1 / total) * 100;
   }
+
   return parts;
 }
 
