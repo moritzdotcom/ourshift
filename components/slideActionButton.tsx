@@ -152,7 +152,7 @@ export default function SlideActionButton({
       <div className="w-full bg-slate-200 border border-slate-300 rounded-lg relative overflow-hidden">
         {/* Label */}
         <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-black">
-          {children}
+          {children}({x}/{maxX}px)
         </span>
 
         {/* Progress-Fill */}
