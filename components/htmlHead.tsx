@@ -15,6 +15,14 @@ export default function HtmlHead({
       {/* Favicon */}
       <link rel="icon" href="/favicon.ico" />
 
+      {/* PWA */}
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-title" content="OurShift" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+      <link rel="manifest" href="/site.webmanifest" />
+      <meta name="theme-color" content="#0ea5e9" />
+
       {/* Apple Touch Icon – canonical */}
       <link
         rel="apple-touch-icon"
