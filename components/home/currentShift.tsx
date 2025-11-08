@@ -20,6 +20,7 @@ import {
 import axios, { isAxiosError } from 'axios';
 import Link from 'next/link';
 import { useRef } from 'react';
+import SlideActionButton from '../slideActionButton';
 
 function fmtDate(s: string | Date) {
   const d = typeof s === 'string' ? new Date(s) : s;
@@ -132,37 +133,37 @@ export default function HomeCurrentShift({
       <Divider my="md" />
 
       {shift ? (
-        <Group justify="space-between" align="center">
-          <Group gap="xs">
-            <Badge
-              color="green"
-              variant="light"
-              leftSection={<IconClockPlay size={14} />}
-            >
-              Läuft seit {timeToHuman(shift.clockIn || shift.start)}
-            </Badge>
-          </Group>
-          <Group>
+        <div className="w-full flex flex-col sm:flex-row gap-3 items-start justify-between">
+          <Badge
+            color="green"
+            variant="light"
+            size="lg"
+            leftSection={<IconClockPlay size={14} />}
+          >
+            Läuft seit {timeToHuman(shift.clockIn || shift.start)}
+          </Badge>
+          <div className="w-full sm:max-w-xs">
             {shift.clockIn && !shift.clockOut && shift.code?.isWorkingShift ? (
-              <Button
+              <SlideActionButton
+                disabled={isPending(shift.id)}
+                onComplete={() => checkOut(shift.id)}
                 color="red"
-                disabled={isPending(shift.id)}
-                leftSection={<IconPlayerStop size={16} />}
-                onClick={() => checkOut(shift.id)}
+                id="CheckOut"
               >
-                Auschecken
-              </Button>
+                Ausstempeln
+              </SlideActionButton>
             ) : (
-              <Button
+              <SlideActionButton
                 disabled={isPending(shift.id)}
-                leftSection={<IconPlayerPlay size={16} />}
-                onClick={() => checkIn(shift.id)}
+                onComplete={() => checkIn(shift.id)}
+                color="green"
+                id="CheckIn"
               >
-                Einchecken
-              </Button>
+                Einstempeln
+              </SlideActionButton>
             )}
-          </Group>
-        </Group>
+          </div>
+        </div>
       ) : (
         <Group justify="space-between">
           <Text c="dimmed">
