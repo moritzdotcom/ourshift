@@ -145,6 +145,7 @@ export default function HomeCurrentShift({
           <div className="w-full sm:max-w-xs">
             {shift.clockIn && !shift.clockOut && shift.code?.isWorkingShift ? (
               <SlideActionButton
+                threshold={0.9}
                 disabled={isPending(shift.id)}
                 onComplete={() => checkOut(shift.id)}
                 color="red"
@@ -154,6 +155,7 @@ export default function HomeCurrentShift({
               </SlideActionButton>
             ) : (
               <SlideActionButton
+                threshold={0.9}
                 disabled={isPending(shift.id)}
                 onComplete={() => checkIn(shift.id)}
                 color="green"
