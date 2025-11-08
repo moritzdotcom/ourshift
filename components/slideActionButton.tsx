@@ -11,7 +11,52 @@ import {
   IconCheck,
   IconLoader2,
 } from '@tabler/icons-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+
+function getWidth(el: HTMLElement | null) {
+  if (!el) return 0;
+  // Safari: getBoundingClientRect ist zuverlässiger
+  const rect = el.getBoundingClientRect();
+  // Fallback
+  return rect.width || el.clientWidth || el.offsetWidth || 0;
+}
+
+function useMaxTravel(
+  trackRef: React.RefObject<HTMLElement | null>,
+  handleRef: React.RefObject<HTMLElement | null>
+) {
+  const [maxX, setMaxX] = useState(0);
+
+  const measure = useCallback(() => {
+    const trackW = getWidth(trackRef.current as HTMLElement);
+    const handleW = getWidth(handleRef.current as HTMLElement);
+    setMaxX(Math.max(0, Math.floor(trackW - handleW)));
+  }, []);
+
+  useLayoutEffect(() => {
+    measure();
+    // Fonts können Breite ändern (Safari!)
+    if ((document as any).fonts?.ready) {
+      (document as any).fonts.ready.then(measure).catch(() => {});
+    }
+
+    const ro = new (window as any).ResizeObserver(() => measure());
+    if (ro && trackRef.current) ro.observe(trackRef.current);
+    if (ro && handleRef.current) ro.observe(handleRef.current);
+
+    const onResize = () => measure();
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+      ro?.disconnect?.();
+    };
+  }, [measure, trackRef, handleRef]);
+
+  return { maxX, remeasure: measure };
+}
 
 type SlideState = 'idle' | 'loading' | 'success';
 
@@ -37,38 +82,26 @@ export default function SlideActionButton({
   const trackRef = useRef<HTMLDivElement | null>(null);
   const handleRef = useRef<HTMLButtonElement | null>(null);
 
+  const { maxX, remeasure } = useMaxTravel(trackRef, handleRef);
+
   // kontrollierte Position, wenn NICHT aktiv gedragt wird
   const [x, setX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [state, setState] = useState<SlideState>('idle');
 
-  // max Strecke
-  const maxX = useMemo(() => {
-    const t = trackRef.current;
-    const h = handleRef.current;
-    if (!t || !h) return 0;
-    return Math.max(0, t.clientWidth - h.clientWidth);
-  }, [children]); // falls Text/Größe sich ändert
-
-  // Prozent-Progress (für Füllung)
-  const progressPct = (() => {
-    const cur = dragging
-      ? // während Drag liefert dnd-kit transform.x – wir lesen ihn im move-Handler in tempRef
-        undefined
-      : x;
-    const val = cur == null || maxX === 0 ? 0 : Math.min(1, cur / maxX);
-    return val;
-  })();
-
   // Wir brauchen während Drag den Live-x (aus transform.x), ohne Re-renders zu spammen:
   const liveXRef = useRef(0);
 
-  const handleDragStart = useCallback((_e: DragStartEvent) => {
-    setDragging(true);
-  }, []);
+  const handleDragStart = useCallback(
+    (_: DragStartEvent) => {
+      // Safari: sicherheitshalber nochmal messen
+      remeasure();
+      setDragging(true);
+    },
+    [remeasure]
+  );
 
   const handleDragMove = useCallback((e: DragMoveEvent) => {
-    // clamp nach rechts
     liveXRef.current = Math.max(0, e.delta.x);
   }, []);
 
@@ -126,20 +159,6 @@ export default function SlideActionButton({
     [animateTo, maxX, onComplete, reset, successDuration, threshold]
   );
 
-  // progress während drag per rAF visualisieren (ohne Re-render jedes Events)
-  const [_, force] = useState(0);
-  useEffect(() => {
-    if (!dragging) return;
-    let raf = 0;
-    const tick = () => {
-      // trigger minimal Re-render für progress-balken
-      force((v) => v + 1);
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [dragging]);
-
   const canDrag = !disabled && state === 'idle';
 
   return (
@@ -152,7 +171,7 @@ export default function SlideActionButton({
       <div className="w-full bg-slate-200 border border-slate-300 rounded-lg relative overflow-hidden">
         {/* Label */}
         <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-black">
-          {children}({x}/{maxX}px)
+          {children}
         </span>
 
         {/* Progress-Fill */}
