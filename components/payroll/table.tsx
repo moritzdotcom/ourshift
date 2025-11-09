@@ -84,39 +84,7 @@ export default function PayrollTable({
                 <Table.Tr>
                   <Table.Td colSpan={8} className="!p-0 bg-slate-50">
                     <Collapse in={!!open[r.userId]}>
-                      <div className="p-3">
-                        <Text size="sm" c="dimmed" mb={6}>
-                          Zuschläge nach Regel
-                        </Text>
-                        {r.supplementsByRule.length === 0 ? (
-                          <Text size="sm" c="dimmed">
-                            Keine Zuschläge
-                          </Text>
-                        ) : (
-                          <Table withTableBorder>
-                            <Table.Thead>
-                              <Table.Tr>
-                                <Table.Th>Regel</Table.Th>
-                                <Table.Th>Minuten</Table.Th>
-                                <Table.Th>Faktor</Table.Th>
-                                <Table.Th>Betrag</Table.Th>
-                              </Table.Tr>
-                            </Table.Thead>
-                            <Table.Tbody>
-                              {r.supplementsByRule.map((b) => (
-                                <Table.Tr key={b.ruleId}>
-                                  <Table.Td>{b.name}</Table.Td>
-                                  <Table.Td>{b.minutes} min</Table.Td>
-                                  <Table.Td>
-                                    <Badge>{b.percent}%</Badge>
-                                  </Table.Td>
-                                  <Table.Td>{Euro(b.amountCents)}</Table.Td>
-                                </Table.Tr>
-                              ))}
-                            </Table.Tbody>
-                          </Table>
-                        )}
-                      </div>
+                      <SupplementsTable supplements={r.supplementsByRule} />
                     </Collapse>
                   </Table.Td>
                 </Table.Tr>
@@ -126,5 +94,94 @@ export default function PayrollTable({
         </Table>
       </div>
     </Card>
+  );
+}
+
+function SupplementsTable({
+  supplements,
+}: {
+  supplements: PayrollRow['supplementsByRule'];
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="p-3">
+      <Text size="sm" c="dimmed" mb={6}>
+        Zuschläge nach Regel
+      </Text>
+      {supplements.length === 0 ? (
+        <Text size="sm" c="dimmed">
+          Keine Zuschläge
+        </Text>
+      ) : (
+        <Table withTableBorder>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Regel</Table.Th>
+              <Table.Th>Minuten</Table.Th>
+              <Table.Th>Faktor</Table.Th>
+              <Table.Th>Betrag</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {supplements.map((b) => (
+              <React.Fragment key={b.ruleId}>
+                <Table.Tr onClick={() => setOpen((o) => !o)}>
+                  <Table.Td>{b.name}</Table.Td>
+                  <Table.Td>{b.minutes} min</Table.Td>
+                  <Table.Td>
+                    <Badge>{b.percent}%</Badge>
+                  </Table.Td>
+                  <Table.Td>{Euro(b.amountCents)}</Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Td colSpan={8} className="!p-0 bg-slate-50">
+                    <Collapse in={open}>
+                      <SupplementTriggerTable triggers={b.triggers} />
+                    </Collapse>
+                  </Table.Td>
+                </Table.Tr>
+              </React.Fragment>
+            ))}
+          </Table.Tbody>
+        </Table>
+      )}
+    </div>
+  );
+}
+
+function SupplementTriggerTable({
+  triggers,
+}: {
+  triggers: PayrollRow['supplementsByRule'][number]['triggers'];
+}) {
+  return (
+    <div className="p-3 bg-amber-50">
+      <Text size="sm" c="dimmed" mb={6}>
+        Auflistung der betroffenen Tage
+      </Text>
+      {triggers.length === 0 ? (
+        <Text size="sm" c="dimmed">
+          Keine Daten
+        </Text>
+      ) : (
+        <Table withTableBorder>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Datum</Table.Th>
+              <Table.Th>Minuten</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {triggers.map((t) => (
+              <Table.Tr key={t.day}>
+                <Table.Td>{t.day}</Table.Td>
+                <Table.Td>{t.minutes} min</Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      )}
+    </div>
   );
 }
