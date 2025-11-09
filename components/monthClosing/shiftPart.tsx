@@ -57,7 +57,8 @@ export default function MonthClosingShiftPart({
         {timeToHuman(part.start)} - {timeToHuman(part.end)}
       </div>
       <div className="px-1.5 text-[10px] truncate">
-        {Math.round((part.end.getTime() - part.start.getTime()) / 60_000) / 60}{' '}
+        {Math.round((part.end.getTime() - part.start.getTime()) / 60_000 / 6) /
+          10}{' '}
         Std.
       </div>
 
