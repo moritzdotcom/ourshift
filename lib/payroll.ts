@@ -2,6 +2,12 @@ import { pickContractForDate } from './digitalContract';
 import { KpiGetHolidays, KpiGetShifts, KpiGetUsers } from './kpiCache';
 import { Decimal } from '@prisma/client/runtime/library';
 import ExcelJS from 'exceljs';
+import {
+  dayBoundsUtc,
+  overlapMinutesUtc,
+  toBerlin,
+  windowsForDayUtc,
+} from './time';
 
 function dayISO(d: Date | string) {
   const x = new Date(d);
@@ -34,90 +40,23 @@ function hourlyFromContract(
   return null;
 }
 
-function splitShiftByDay(
-  start: Date,
-  end: Date
-): { day: string; segStart: Date; segEnd: Date }[] {
+function splitShiftByDay(startUtc: Date, endUtc: Date) {
   const parts: { day: string; segStart: Date; segEnd: Date }[] = [];
-  let cur = start;
-  while (cur < end) {
-    const dayStart = new Date(
-      cur.getFullYear(),
-      cur.getMonth(),
-      cur.getDate(),
-      0,
-      0,
-      0,
-      0
+  // in Berlin "laufen", aber Segmente als UTC-JS-Dates zurückgeben
+  let curWall = toBerlin(startUtc);
+  const endWall = toBerlin(endUtc);
+
+  while (curWall < endWall) {
+    const dayISO = curWall.toISODate()!;
+    const { startUtc: dayStartUtc, endUtc: dayEndUtc } = dayBoundsUtc(dayISO);
+    const segStart = new Date(
+      Math.max(startUtc.getTime(), dayStartUtc.getTime())
     );
-    const nextDay = new Date(
-      dayStart.getFullYear(),
-      dayStart.getMonth(),
-      dayStart.getDate() + 1,
-      0,
-      0,
-      0,
-      0
-    );
-    const segStart = cur;
-    const segEnd = end < nextDay ? end : nextDay;
-    parts.push({ day: dayISO(dayStart), segStart, segEnd });
-    cur = segEnd;
+    const segEnd = new Date(Math.min(endUtc.getTime(), dayEndUtc.getTime()));
+    parts.push({ day: dayISO, segStart, segEnd });
+    curWall = curWall.plus({ days: 1 }).startOf('day');
   }
   return parts;
-}
-
-function dayBoundsLocal(dayISO: string) {
-  const [y, m, d] = dayISO.split('-').map(Number);
-  // Lokale Mitternacht – Date kümmert sich um Offset
-  const start = new Date(y, m - 1, d, 0, 0, 0, 0);
-  const end = new Date(y, m - 1, d + 1, 0, 0, 0, 0); // nächste lokale Mitternacht
-  return { start, end }; // kann 23/24/25h sein
-}
-
-function addWallMinutes(base: Date, mins: number) {
-  const dt = new Date(base.getTime());
-  dt.setMinutes(dt.getMinutes() + mins); // korrekt über DST-Grenzen
-  return dt;
-}
-
-/** Liefert konkrete Fenster-Intervalle [start,end) in absoluten Dates für diesen Tag */
-function windowsForDay(
-  dayISO: string,
-  winStartMin?: number | null,
-  winEndMin?: number | null
-): Array<[Date, Date]> {
-  const { start: dayStart, end: dayEnd } = dayBoundsLocal(dayISO);
-
-  // Ganztägig
-  if (winStartMin == null || winEndMin == null) {
-    return [[dayStart, dayEnd]];
-  }
-
-  // "00:00" als Endwert -> Ende = Mitternacht nächsten Tages
-  const endMin = winEndMin === 0 ? 24 * 60 : winEndMin;
-
-  if (endMin <= winStartMin) {
-    // über Mitternacht innerhalb desselben "Tagesfensters": zwei Intervalle
-    const aStart = dayStart;
-    const aEnd = addWallMinutes(dayStart, endMin);
-    const bStart = addWallMinutes(dayStart, winStartMin);
-    const bEnd = dayEnd;
-    return [
-      [aStart, aEnd],
-      [bStart, bEnd],
-    ];
-  } else {
-    const wStart = addWallMinutes(dayStart, winStartMin);
-    const wEnd = addWallMinutes(dayStart, endMin);
-    return [[wStart, wEnd]];
-  }
-}
-
-function overlapMinutesAbs(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) {
-  const start = Math.max(aStart.getTime(), bStart.getTime());
-  const end = Math.min(aEnd.getTime(), bEnd.getTime());
-  return Math.max(0, Math.round((end - start) / 60000));
 }
 
 function ruleActiveOnDay(
@@ -263,14 +202,14 @@ export function buildPayrollForMonth({
           ruleActiveOnDay(r, p.day, holidays)
         );
         for (const r of dayRules) {
-          const wins = windowsForDay(
+          const wins = windowsForDayUtc(
             p.day,
             r.windowStartMin ?? null,
             r.windowEndMin ?? null
           );
           let ov = 0;
           for (const [wStart, wEnd] of wins) {
-            ov += overlapMinutesAbs(p.segStart, p.segEnd, wStart, wEnd);
+            ov += overlapMinutesUtc(p.segStart, p.segEnd, wStart, wEnd);
           }
           if (ov <= 0) continue;
           if (hourly == null || r.percent == null) continue;
