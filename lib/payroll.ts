@@ -186,7 +186,7 @@ export type PayrollRow = {
     minutes: number;
     amountCents: number;
     percent: number;
-    triggers: { day: string; minutes: number }[];
+    triggers: { day: string; from: string; to: string; minutes: number }[];
   }[];
   supplementsTotalCents: number;
   grossCents: number;
@@ -245,7 +245,7 @@ export function buildPayrollForMonth({
         minutes: number;
         amountCents: number;
         percent: number;
-        triggers: { day: string; minutes: number }[];
+        triggers: { day: string; from: string; to: string; minutes: number }[];
       }
     >();
 
@@ -287,7 +287,12 @@ export function buildPayrollForMonth({
           };
           item.minutes += ov;
           item.amountCents += amount;
-          item.triggers.push({ day: p.day, minutes: ov });
+          item.triggers.push({
+            day: p.day,
+            from: p.segStart.toISOString(),
+            to: p.segEnd.toISOString(),
+            minutes: ov,
+          });
           suppMap.set(r.id, item);
         }
       }

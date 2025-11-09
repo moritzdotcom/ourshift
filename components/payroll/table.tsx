@@ -9,6 +9,7 @@ import {
   Loader,
 } from '@mantine/core';
 import { PayrollRow } from '@/lib/payroll';
+import { timeToHuman } from '@/lib/dates';
 
 function Euro(cents?: number | null) {
   if (!cents) return '—';
@@ -169,16 +170,24 @@ function SupplementTriggerTable({
           <Table.Thead>
             <Table.Tr>
               <Table.Th>Datum</Table.Th>
-              <Table.Th>Minuten</Table.Th>
+              <Table.Th>Von</Table.Th>
+              <Table.Th>Bis</Table.Th>
+              <Table.Th ta="right">Minuten</Table.Th>
+              <Table.Th ta="right">Stunden</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {triggers.map((t) => (
-              <Table.Tr key={t.day}>
-                <Table.Td>{t.day}</Table.Td>
-                <Table.Td>{t.minutes} min</Table.Td>
-              </Table.Tr>
-            ))}
+            {triggers
+              .sort((a, b) => a.from.localeCompare(b.from))
+              .map((t) => (
+                <Table.Tr key={`${t.from}`}>
+                  <Table.Td>{t.day}</Table.Td>
+                  <Table.Td>{timeToHuman(new Date(t.from))}</Table.Td>
+                  <Table.Td>{timeToHuman(new Date(t.to))}</Table.Td>
+                  <Table.Td ta="right">{t.minutes} min</Table.Td>
+                  <Table.Td ta="right">{t.minutes / 60} Std.</Table.Td>
+                </Table.Tr>
+              ))}
           </Table.Tbody>
         </Table>
       )}
