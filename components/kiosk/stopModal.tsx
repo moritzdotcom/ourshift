@@ -7,6 +7,8 @@ import {
   Button,
   TextInput,
   Center,
+  Collapse,
+  PasswordInput,
 } from '@mantine/core';
 import { IconLockOpen, IconCheck } from '@tabler/icons-react';
 import axios from 'axios';
@@ -29,6 +31,9 @@ export function KioskStopModal({ opened, onClose }: KioskStopModalProps) {
   const [apiError, setApiError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  const [password, setPassword] = useState('');
+  const [attemps, setAttemps] = useState(0);
+
   async function handleExitKiosk() {
     setPinError(null);
     setApiError(null);
@@ -43,6 +48,7 @@ export function KioskStopModal({ opened, onClose }: KioskStopModalProps) {
 
       const res = await axios.post('/api/kiosk/stop', {
         pinAttempt: pin,
+        password,
       });
 
       if (res.data?.ok) {
@@ -69,6 +75,7 @@ export function KioskStopModal({ opened, onClose }: KioskStopModalProps) {
         setApiError('Serverfehler beim Entsperren.');
       }
     } finally {
+      setAttemps((a) => a + 1);
       setSubmitting(false);
     }
   }
@@ -79,6 +86,7 @@ export function KioskStopModal({ opened, onClose }: KioskStopModalProps) {
     setPin('');
     setPinError(null);
     setApiError(null);
+    setAttemps(0);
     onClose();
   }
 
@@ -203,6 +211,29 @@ export function KioskStopModal({ opened, onClose }: KioskStopModalProps) {
                 {apiError}
               </Text>
             )}
+
+            <Collapse in={attemps >= 2}>
+              <Stack gap={2}>
+                <Text c="dimmed">Alternativ Passwort eingeben</Text>
+                <PasswordInput
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.currentTarget.value)}
+                  styles={{
+                    label: { color: 'rgba(255,255,255,0.6)' },
+                    input: {
+                      backgroundColor: '#1f2937',
+                      borderColor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      fontVariantNumeric: 'tabular-nums',
+                      fontWeight: 500,
+                      letterSpacing: '0.08em',
+                    },
+                    error: { color: '#ef4444' },
+                  }}
+                />
+              </Stack>
+            </Collapse>
 
             <Group justify="flex-end" w="100%" mt="md">
               <Button

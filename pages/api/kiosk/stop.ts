@@ -1,4 +1,4 @@
-import { verifyPin } from '@/lib/password';
+import { verifyPassword, verifyPin } from '@/lib/password';
 import { serialize } from 'cookie';
 import { NextApiRequest, NextApiResponse } from 'next';
 
@@ -8,9 +8,10 @@ export default async function handler(
 ) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { pinAttempt } = req.body;
+  const { pinAttempt, password } = req.body;
 
   const pinHash = req.cookies.kiosk_unlock_hash;
+  const passwordHash = req.cookies.kiosk_unlock_password_hash;
   const backupSession = req.cookies.os_session_backup;
   if (!pinHash || !backupSession)
     return res
@@ -18,7 +19,11 @@ export default async function handler(
       .json({ ok: true, redirectTo: '/management/dashboard' });
 
   // compare
-  const isValid = await verifyPin(pinHash, pinAttempt);
+  const isValidPin = await verifyPin(pinHash, pinAttempt);
+  const isValid =
+    isValidPin ||
+    (typeof passwordHash === 'string' &&
+      (await verifyPassword(passwordHash, password)));
   if (!isValid) {
     return res.status(401).json({ ok: false, error: 'Falsche PIN' });
   }
@@ -39,6 +44,13 @@ export default async function handler(
       maxAge: 0,
     }),
     serialize('kiosk_unlock_hash', '', {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: true,
+      maxAge: 0,
+    }),
+    serialize('kiosk_unlock_password_hash', '', {
       path: '/',
       httpOnly: true,
       sameSite: 'lax',
