@@ -35,6 +35,7 @@ import { EnableNotificationsModal } from '@/components/enableNotificationsModal'
 import { shouldAutoOpenPushPrompt } from '@/lib/pushPromptGate';
 import { WorkingStatsEntry } from '@/lib/timeAccount';
 import HomeTimeAccountCard from '@/components/home/timeAccountCard';
+import useSWR from 'swr';
 
 export type MyShift = ApiMyShiftResponse['shifts'][number];
 
@@ -68,7 +69,7 @@ export default function HomePage() {
 
   const [loading, setLoading] = useState(true);
   const [shifts, setShifts] = useState<MyShift[]>([]);
-  const [taData, setTaData] = useState<WorkingStatsEntry>();
+
   const [err, setErr] = useState<string | null>(null);
 
   const [pastShiftsSlice, setPastShiftsSlice] = useState(4);
@@ -77,6 +78,14 @@ export default function HomePage() {
   const from = useMemo(() => startOfMonth().toISOString(), []);
   const to = useMemo(() => addDays(startOfDay(), 15).toISOString(), []);
   const now = new Date();
+
+  const { data: taData, isLoading: taDataLoading } = useSWR<WorkingStatsEntry>(
+    '/api/users/timeAccount/my',
+    () =>
+      axios
+        .get<WorkingStatsEntry>('/api/users/timeAccount/my')
+        .then((r) => r.data)
+  );
 
   useEffect(() => {
     if (userLoading) return;
@@ -97,10 +106,6 @@ export default function HomePage() {
             .slice()
             .sort((a, b) => +new Date(a.start) - +new Date(b.start))
         );
-        const { data: myTaData } = await axios.get<WorkingStatsEntry>(
-          '/api/users/timeAccount/my'
-        );
-        setTaData(myTaData);
       } catch (e: any) {
         setErr(e?.response?.data?.error || 'Fehler beim Laden der Schichten');
       } finally {
@@ -310,7 +315,7 @@ export default function HomePage() {
             </Alert>
           )}
 
-          <HomeTimeAccountCard entry={taData} loading={!taData} />
+          <HomeTimeAccountCard entry={taData} loading={taDataLoading} />
 
           {/* Heute & Kommend */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
