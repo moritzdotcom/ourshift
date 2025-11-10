@@ -40,6 +40,7 @@ export default function MonthClosingBackfillModal({
   }, [clockIn, clockOut]);
 
   async function handleSubmit() {
+    if (!opened) return;
     if (!canSubmit) {
       return showError('Bitte gültige Zeiten wählen (Eintritt vor Austritt).');
     }
