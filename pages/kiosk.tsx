@@ -196,14 +196,16 @@ export default function KioskPage() {
 
       {/* Alle relevanten Schichten (aktive + nächste) */}
       <Stack gap="lg">
-        {shifts.map((shift) => (
-          <KioskShiftCard
-            key={shift.id}
-            shift={shift}
-            onPunch={handleOpenPinForShift}
-            onTakeover={handleOpenUserModal}
-          />
-        ))}
+        {shifts
+          .filter((s) => !s.clockIn || !s.clockOut)
+          .map((shift) => (
+            <KioskShiftCard
+              key={shift.id}
+              shift={shift}
+              onPunch={handleOpenPinForShift}
+              onTakeover={handleOpenUserModal}
+            />
+          ))}
       </Stack>
 
       {/* PIN Modal (global, aber weiß für welche Schicht über activeShiftForPin) */}

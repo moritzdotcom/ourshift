@@ -25,10 +25,7 @@ export default function useKioskData() {
   const userFetcher = () =>
     axios.get<KioskUser[]>('/api/kiosk/users').then((res) => res.data);
 
-  const { data: users, mutate: setUsers } = useSWR<KioskUser[]>(
-    '/api/kiosk/users',
-    userFetcher
-  );
+  const { data: users } = useSWR<KioskUser[]>('/api/kiosk/users', userFetcher);
 
   /**
    * Versucht für eine bestimmte Schicht (shiftId) die PIN zu stempeln.
