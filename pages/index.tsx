@@ -33,6 +33,8 @@ import TakeoverShiftList from '@/components/home/takeoverShiftList';
 import { usePushPrefs } from '@/hooks/usePushPrefs';
 import { EnableNotificationsModal } from '@/components/enableNotificationsModal';
 import { shouldAutoOpenPushPrompt } from '@/lib/pushPromptGate';
+import { WorkingStatsEntry } from '@/lib/timeAccount';
+import HomeTimeAccountCard from '@/components/home/timeAccountCard';
 
 export type MyShift = ApiMyShiftResponse['shifts'][number];
 
@@ -66,6 +68,7 @@ export default function HomePage() {
 
   const [loading, setLoading] = useState(true);
   const [shifts, setShifts] = useState<MyShift[]>([]);
+  const [taData, setTaData] = useState<WorkingStatsEntry>();
   const [err, setErr] = useState<string | null>(null);
 
   const [pastShiftsSlice, setPastShiftsSlice] = useState(4);
@@ -94,6 +97,10 @@ export default function HomePage() {
             .slice()
             .sort((a, b) => +new Date(a.start) - +new Date(b.start))
         );
+        const { data: myTaData } = await axios.get<WorkingStatsEntry>(
+          '/api/users/timeAccount/my'
+        );
+        setTaData(myTaData);
       } catch (e: any) {
         setErr(e?.response?.data?.error || 'Fehler beim Laden der Schichten');
       } finally {
@@ -302,6 +309,8 @@ export default function HomePage() {
               {err}
             </Alert>
           )}
+
+          <HomeTimeAccountCard entry={taData} loading={!taData} />
 
           {/* Heute & Kommend */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
