@@ -82,6 +82,18 @@ export default function MonthClosingBackfillModal({
     }
   }
 
+  function modClockIn(min: number) {
+    setClockIn(
+      (ci) => new Date(new Date(ci || shift.start).getTime() + min * 60_000)
+    );
+  }
+
+  function modClockOut(min: number) {
+    setClockOut(
+      (co) => new Date(new Date(co || shift.end).getTime() + min * 60_000)
+    );
+  }
+
   return (
     <Modal
       opened={opened}
@@ -126,6 +138,26 @@ export default function MonthClosingBackfillModal({
             withSeconds={false}
             aria-label="clock-in"
           />
+          <Button.Group mt="xs">
+            <Button onClick={() => modClockIn(-120)} variant="subtle" c="gray">
+              - 2 Std.
+            </Button>
+            <Button onClick={() => modClockIn(-60)} variant="subtle" c="gray">
+              - 1 Std.
+            </Button>
+            <Button onClick={() => modClockIn(-30)} variant="subtle" c="gray">
+              - 30 min
+            </Button>
+            <Button onClick={() => modClockIn(30)} variant="subtle" c="teal">
+              + 30 min
+            </Button>
+            <Button onClick={() => modClockIn(60)} variant="subtle" c="teal">
+              + 1 Std.
+            </Button>
+            <Button onClick={() => modClockIn(120)} variant="subtle" c="teal">
+              + 2 Std.
+            </Button>
+          </Button.Group>
           {shift.clockIn && (
             <Text size="sm" c="dimmed">
               Check In: {dateTimeToHuman(getDate(shift.clockIn))}
@@ -149,6 +181,26 @@ export default function MonthClosingBackfillModal({
             minDate={clockIn ?? undefined}
             aria-label="clock-out"
           />
+          <Button.Group mt="xs">
+            <Button onClick={() => modClockOut(-120)} variant="subtle" c="gray">
+              - 2 Std.
+            </Button>
+            <Button onClick={() => modClockOut(-60)} variant="subtle" c="gray">
+              - 1 Std.
+            </Button>
+            <Button onClick={() => modClockOut(-30)} variant="subtle" c="gray">
+              - 30 min
+            </Button>
+            <Button onClick={() => modClockOut(30)} variant="subtle" c="teal">
+              + 30 min
+            </Button>
+            <Button onClick={() => modClockOut(60)} variant="subtle" c="teal">
+              + 1 Std.
+            </Button>
+            <Button onClick={() => modClockOut(120)} variant="subtle" c="teal">
+              + 2 Std.
+            </Button>
+          </Button.Group>
           {shift.clockOut && (
             <Text size="sm" c="dimmed">
               Check Out: {dateTimeToHuman(getDate(shift.clockOut))}
