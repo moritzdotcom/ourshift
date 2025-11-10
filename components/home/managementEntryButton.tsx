@@ -4,20 +4,18 @@ import {
   Group,
   Stack,
   Text,
-  Anchor,
   Divider,
   Box,
 } from '@mantine/core';
 import {
   IconSettings,
-  IconUsersGroup,
-  IconClockHour4,
-  IconChartBar,
   IconLayoutDashboard,
   IconCalendar,
   IconUsers,
   IconClipboardCheck,
   IconCoins,
+  IconClock2,
+  IconCalendarCheck,
 } from '@tabler/icons-react';
 import Link from 'next/link';
 
@@ -79,6 +77,37 @@ export default function ManagementEntryButton() {
             </Group>
           </Link>
 
+          <Link href="/management/payroll" style={{ textDecoration: 'none' }}>
+            <Group gap="xs" wrap="nowrap">
+              <IconCoins size={18} stroke={1.5} />
+              <Box>
+                <Text fz="sm" fw={500} c="gray.9">
+                  Lohnabrechnung
+                </Text>
+                <Text fz={11} c="dimmed" lh={1.4}>
+                  Finanzbuchhaltung auf einem Blick
+                </Text>
+              </Box>
+            </Group>
+          </Link>
+
+          <Link
+            href="/management/timeAccount"
+            style={{ textDecoration: 'none' }}
+          >
+            <Group gap="xs" wrap="nowrap">
+              <IconClock2 size={18} stroke={1.5} />
+              <Box>
+                <Text fz="sm" fw={500} c="gray.9">
+                  Zeitarbeitskonto
+                </Text>
+                <Text fz={11} c="dimmed" lh={1.4}>
+                  Stunden & Urlaub einsehen
+                </Text>
+              </Box>
+            </Group>
+          </Link>
+
           <Link href="/management/planner" style={{ textDecoration: 'none' }}>
             <Group gap="xs" wrap="nowrap">
               <IconCalendar size={18} stroke={1.5} />
@@ -93,15 +122,18 @@ export default function ManagementEntryButton() {
             </Group>
           </Link>
 
-          <Link href="/management/users" style={{ textDecoration: 'none' }}>
+          <Link
+            href="/management/monthClosing"
+            style={{ textDecoration: 'none' }}
+          >
             <Group gap="xs" wrap="nowrap">
-              <IconUsers size={18} stroke={1.5} />
+              <IconCalendarCheck size={18} stroke={1.5} />
               <Box>
                 <Text fz="sm" fw={500} c="gray.9">
-                  Team
+                  Monatsabschluss
                 </Text>
                 <Text fz={11} c="dimmed" lh={1.4}>
-                  Mitarbeiterdaten, Verträge, Zuschlagsregeln
+                  Ist-Plan anpassen
                 </Text>
               </Box>
             </Group>
@@ -121,6 +153,20 @@ export default function ManagementEntryButton() {
             </Group>
           </Link>
 
+          <Link href="/management/users" style={{ textDecoration: 'none' }}>
+            <Group gap="xs" wrap="nowrap">
+              <IconUsers size={18} stroke={1.5} />
+              <Box>
+                <Text fz="sm" fw={500} c="gray.9">
+                  Team
+                </Text>
+                <Text fz={11} c="dimmed" lh={1.4}>
+                  Mitarbeiterdaten, Verträge, Zuschlagsregeln
+                </Text>
+              </Box>
+            </Group>
+          </Link>
+
           <Link href="/management/settings" style={{ textDecoration: 'none' }}>
             <Group gap="xs" wrap="nowrap">
               <IconSettings size={18} stroke={1.5} />
@@ -130,20 +176,6 @@ export default function ManagementEntryButton() {
                 </Text>
                 <Text fz={11} c="dimmed" lh={1.4}>
                   Schicht-Codes & Feiertage
-                </Text>
-              </Box>
-            </Group>
-          </Link>
-
-          <Link href="/management/payroll" style={{ textDecoration: 'none' }}>
-            <Group gap="xs" wrap="nowrap">
-              <IconCoins size={18} stroke={1.5} />
-              <Box>
-                <Text fz="sm" fw={500} c="gray.9">
-                  Lohnabrechnung
-                </Text>
-                <Text fz={11} c="dimmed" lh={1.4}>
-                  Finanzbuchhaltung auf einem Blick
                 </Text>
               </Box>
             </Group>
