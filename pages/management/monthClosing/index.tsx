@@ -1,26 +1,13 @@
 import { useEffect, useState } from 'react';
-import {
-  Group,
-  Title,
-  Select,
-  Center,
-  Loader,
-  RingProgress,
-  ActionIcon,
-  Text,
-  Badge,
-  Stack,
-} from '@mantine/core';
-import { IconCalendar, IconCheck } from '@tabler/icons-react';
+import { Center, Loader } from '@mantine/core';
 import axios from 'axios';
 import ManagementLayout from '@/layouts/managementLayout';
-import { ApiGetSimpleUsersResponse } from '../api/users';
-import { ApiGetShiftsResponse } from '../api/shifts';
 import { dateToISO } from '@/lib/dates';
 import { ChangeStatus, AbsenceReason } from '@/generated/prisma';
 import MonthClosingGrid from '@/components/monthClosing/grid';
 import MonthClosingHeader from '@/components/monthClosing/header';
-import { useMonthClosingStats } from '@/hooks/useMonthClosingStats';
+import { ApiGetSimpleUsersResponse } from '@/pages/api/users';
+import { ApiGetShiftsResponse } from '@/pages/api/shifts';
 
 export type MonthClosingShift = {
   id: string;

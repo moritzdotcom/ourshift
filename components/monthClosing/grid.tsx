@@ -2,6 +2,7 @@ import { buildMonthLayout } from '@/lib/monthClosing';
 import { MonthClosingShift } from '@/pages/management/monthClosing';
 import { useMemo } from 'react';
 import MonthClosingShiftPart from './shiftPart';
+import MonthClosingTimeColumn from './timeColumn';
 
 function dayLabel(dt: Date) {
   return dt.toLocaleDateString('de-DE', { weekday: 'short' });
@@ -37,19 +38,10 @@ export default function MonthClosingGrid({
   return (
     <div className="flex items-start gap-2">
       {/* linke Zeitspalte */}
-      <div className="flex flex-col" style={{ marginTop: HEADER_HEIGHT }}>
-        {Array.from({ length: 24 }).map((_, i) => (
-          <div
-            className="text-stone-400 text-xs flex"
-            key={`ts-${i}`}
-            style={{ height: HOUR_HEIGHT }}
-          >
-            <span className="-translate-y-2">
-              {i.toString().padStart(2, '0')}:00
-            </span>
-          </div>
-        ))}
-      </div>
+      <MonthClosingTimeColumn
+        marginTop={HEADER_HEIGHT}
+        itemHeight={HOUR_HEIGHT}
+      />
 
       {/* Tages-Spalten */}
       <div

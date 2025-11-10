@@ -11,7 +11,8 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { IconCalendar, IconCheck } from '@tabler/icons-react';
+import { IconCalendar, IconCheck, IconPrinter } from '@tabler/icons-react';
+import Link from 'next/link';
 
 export default function MonthClosingHeader({
   shifts,
@@ -38,7 +39,17 @@ export default function MonthClosingHeader({
     <Group justify="space-between">
       <Group>
         <Stack gap={5}>
-          <Title order={2}>Monatsabschluss</Title>
+          <Group gap="xs">
+            <Title order={2}>Monatsabschluss</Title>
+            <ActionIcon
+              component={Link}
+              href={`/management/monthClosing/print?year=${year}&month=${month}`}
+              variant="subtle"
+              size="lg"
+            >
+              <IconPrinter />
+            </ActionIcon>
+          </Group>
           {stats.toReview === 0 ? (
             <Badge color="teal" leftSection={<IconCheck size={14} />}>
               Monat abgeschlossen

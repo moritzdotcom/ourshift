@@ -8,6 +8,9 @@ import ShiftCodeBadge from '@/components/shiftCodes/badge';
 import { legendLabel, shiftCodeBadgeContent } from '@/lib/shiftCode';
 import { useViewportSize } from '@mantine/hooks';
 import { employedInMonth } from '@/lib/user';
+import Link from 'next/link';
+import { Button } from '@mantine/core';
+import { IconChevronLeft } from '@tabler/icons-react';
 
 function isWeekend(dt: Date) {
   return dt.getDay() == 0;
@@ -134,7 +137,6 @@ export default function PlannerPrintPage() {
         ?.length || 0;
     const longestUserWidth = longestUser * 8;
     const otherWidth = Math.floor((vpWidth - longestUserWidth) / days.length);
-    console.log(otherWidth);
     return [longestUserWidth, otherWidth];
   }, [days, vpWidth, users]);
 
@@ -143,6 +145,13 @@ export default function PlannerPrintPage() {
       className="print-root mx-auto"
       style={{ width: `${firstColWidth + otherColsWidth * days.length}px` }}
     >
+      <div className="print:hidden my-3">
+        <Link href="/management/planner">
+          <Button variant="light" leftSection={<IconChevronLeft />}>
+            Zurück
+          </Button>
+        </Link>
+      </div>
       <header className="flex justify-between items-center">
         <div className="text-xl font-medium">Dienstplan - {monthLabel}</div>
         <div className="text-sm">
