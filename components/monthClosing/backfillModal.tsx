@@ -4,6 +4,7 @@ import { showError, showInfo, showSuccess } from '@/lib/toast';
 import { MonthClosingShift } from '@/pages/management/monthClosing';
 import { Button, Card, Group, Modal, Stack, Text } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
+import { useHotkeys } from '@mantine/hooks';
 import axios from 'axios';
 import { useState, useMemo } from 'react';
 
@@ -93,6 +94,8 @@ export default function MonthClosingBackfillModal({
       (co) => new Date(new Date(co || shift.end).getTime() + min * 60_000)
     );
   }
+
+  useHotkeys([['s', () => handleSubmit()]]);
 
   return (
     <Modal
