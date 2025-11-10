@@ -33,11 +33,13 @@ export default function DigitalContractsSidebar({
 
   const filtered = useMemo(
     () =>
-      users.filter((u) =>
-        `${u.firstName} ${u.lastName}`
-          .toLowerCase()
-          .includes(query.toLowerCase())
-      ),
+      users
+        .filter((u) =>
+          `${u.firstName} ${u.lastName}`
+            .toLowerCase()
+            .includes(query.toLowerCase())
+        )
+        .sort((a, b) => a.firstName.localeCompare(b.firstName)),
     [users, query]
   );
 
