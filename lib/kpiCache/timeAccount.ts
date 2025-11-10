@@ -1,12 +1,20 @@
 import { failureResp, isOk, successResp } from '../apiResponse';
 import { calculateWorkingStats, WorkingStatsEntry } from '../timeAccount';
 import prisma from '../prismadb';
+import { getDepsUpdatedAtForMonth, isStale } from '.';
 
 export type TimeAccountPayload = WorkingStatsEntry[];
 
-export async function recalcMonthTimeAccount(y: any, m: any) {
+export async function recalcMonthTimeAccount(
+  y: any,
+  m: any,
+  data?: { depsUpdatedAt?: Date }
+) {
   if (Number.isNaN(y) || Number.isNaN(m))
     return failureResp('cache', undefined, 'Invalid Date Params');
+
+  const depsUpdatedAt =
+    data?.depsUpdatedAt || (await getDepsUpdatedAtForMonth(y, m));
 
   const now = new Date();
 
@@ -19,7 +27,7 @@ export async function recalcMonthTimeAccount(y: any, m: any) {
     update: {
       payload: workingStats as any,
       calculationDoneAt: now,
-      depsUpdatedAt: now,
+      depsUpdatedAt,
     },
     create: {
       type: 'TIMEACCOUNT',
@@ -27,7 +35,7 @@ export async function recalcMonthTimeAccount(y: any, m: any) {
       monthIndex: m,
       payload: workingStats as any,
       calculationDoneAt: now,
-      depsUpdatedAt: now,
+      depsUpdatedAt,
     },
   });
 
@@ -50,9 +58,19 @@ export async function getOrRecalcTimeAccountKPIs(
     },
   });
 
-  if (cache) return successResp('cache', cache);
+  const depsUpdatedAt = await getDepsUpdatedAtForMonth(y, m);
+  const stale =
+    isStale({ cache: cache ?? undefined }) ||
+    !cache?.depsUpdatedAt ||
+    depsUpdatedAt > (cache?.depsUpdatedAt ?? new Date(0));
 
-  const updatedResponse = await recalcMonthTimeAccount(y, m);
+  if (!stale && cache) {
+    return successResp('cache', cache);
+  }
+
+  const updatedResponse = await recalcMonthTimeAccount(y, m, {
+    depsUpdatedAt,
+  });
   if (isOk(updatedResponse)) return successResp('cache', updatedResponse.cache);
   return failureResp('cache', undefined, updatedResponse.error);
 }

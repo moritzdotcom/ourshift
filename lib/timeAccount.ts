@@ -106,13 +106,32 @@ function shiftMinutesForMonth(
   return mins;
 }
 
+function plannedShiftMinutesForMonth(
+  s: {
+    start: Date;
+    end: Date;
+  },
+  year: number,
+  month0: number
+) {
+  const shownStart = s.start;
+  const shownEnd = s.end;
+  const clamped = clampIntervalToMonth(shownStart, shownEnd, year, month0);
+  if (!clamped) return 0;
+  const mins = minutesInRange(clamped.s, clamped.e);
+  return mins;
+}
+
 export type WorkingStatsEntry = {
   user: { id: string; firstName: string; lastName: string };
   mHours: number; // Ist Stunden Monat
   mHoursPlan: number; // Soll Stunden Monat
+  mHoursPlanned: number; // Plan Stunden Monat
   yHours: number; // Ist Stunden Jahr
   yHoursPlan: number; // Soll Stunden Jahr
+  yHoursPlanned: number; // Plan Stunden Jahr
   overtime: number; // Überstunden (Stunden, +/−)
+  overtimePlanned: number; // Plan Überstunden (Stunden, +/−)
   mVacation: number; // Urlaubstage Monat (Ist)
   yVacation: number; // Urlaubstage Jahr (Ist)
   yVacationPlan: number; // Urlaubstage Jahr (Soll)
@@ -177,9 +196,12 @@ export async function calculateWorkingStats(
       user: { id: u.id, firstName: u.firstName, lastName: u.lastName },
       mHours: 0, // X
       mHoursPlan: 0, // X
+      mHoursPlanned: 0, // X
       yHours: 0, // X
       yHoursPlan: 0, // X
+      yHoursPlanned: 0, // X
       overtime: 0, // X
+      overtimePlanned: 0, // X
       mVacation: 0, // X
       yVacation: 0, // X
       yVacationPlan: 0, // X
@@ -211,6 +233,10 @@ export async function calculateWorkingStats(
 
       Array.from({ length: months }).forEach((_, i) => {
         const m = start.getMonth() + i;
+        const isFuture =
+          new Date().getTime() <=
+          new Date(year, m + 1, 0, 23, 59, 59, 999).getTime();
+
         const shifts = shiftsForMonth(u.shifts, year, m);
         const vacationDays = vacationDaysForMonth(
           u.vacationDays,
@@ -230,8 +256,12 @@ export async function calculateWorkingStats(
 
           for (const s of shifts) {
             const totalHours = shiftMinutesForMonth(s, year, m) / 60;
+            const totalPlannedHours =
+              plannedShiftMinutesForMonth(s, year, m) / 60;
             entry.yHours += totalHours;
+            entry.yHoursPlanned += isFuture ? totalPlannedHours : totalHours;
             entry.mHours += totalHours;
+            entry.mHoursPlanned += totalPlannedHours;
             if (s.shiftAbsence) {
               sickDaySet.add(
                 `${s.start.getFullYear()}${s.start.getMonth()}${s.start.getDate()}`
@@ -253,11 +283,16 @@ export async function calculateWorkingStats(
           );
           const vacationHours = fullVacationWeeks * Number(c.weeklyHours || 0);
           entry.mHours += vacationHours;
+          entry.mHoursPlanned += vacationHours;
 
           entry.mSickDays = sickDaySetM.size;
         } else {
           for (const s of shifts) {
             entry.yHours += shiftMinutesForMonth(s, year, m) / 60;
+            entry.yHoursPlanned +=
+              (isFuture
+                ? plannedShiftMinutesForMonth(s, year, m)
+                : shiftMinutesForMonth(s, year, m)) / 60;
             if (s.shiftAbsence) {
               sickDaySet.add(
                 `${s.start.getFullYear()}${s.start.getMonth()}${s.start.getDate()}`
@@ -269,10 +304,15 @@ export async function calculateWorkingStats(
       // Urlaubstage zu Ist Stunden addieren
       const fullVacationWeeks = Math.floor(entry.yVacation / 5);
       entry.yHours += fullVacationWeeks * Number(c.weeklyHours || 0);
+      entry.yHoursPlanned += fullVacationWeeks * Number(c.weeklyHours || 0);
     }
 
     entry.ySickDays = sickDaySet.size;
-    list.push({ ...entry, overtime: entry.yHours - entry.yHoursPlan });
+    list.push({
+      ...entry,
+      overtime: entry.yHours - entry.yHoursPlan,
+      overtimePlanned: entry.yHoursPlanned - entry.yHoursPlan,
+    });
   }
   return list;
 }

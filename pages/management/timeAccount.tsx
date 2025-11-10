@@ -113,18 +113,42 @@ export default function TimeAccountSimple() {
             >
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th ta="center">Mitarbeiter</Table.Th>
-                  <Table.Th ta="center">Ist Stunden Monat</Table.Th>
-                  <Table.Th ta="center">Soll Stunden Monat</Table.Th>
-                  <Table.Th ta="center">Ist Stunden Jahr</Table.Th>
-                  <Table.Th ta="center">Soll Stunden Jahr</Table.Th>
-                  <Table.Th ta="center">Überstunden</Table.Th>
-                  <Table.Th ta="center">Ist Urlaub Monat</Table.Th>
-                  <Table.Th ta="center">Ist Urlaub Jahr</Table.Th>
-                  <Table.Th ta="center">Soll Urlaub Jahr</Table.Th>
-                  <Table.Th ta="center">Resturlaub VJ</Table.Th>
-                  <Table.Th ta="center">Krankentage Monat</Table.Th>
-                  <Table.Th ta="center">KrankenTage Jahr</Table.Th>
+                  <Table.Th rowSpan={2} ta="center">
+                    Mitarbeiter
+                  </Table.Th>
+                  <Table.Th colSpan={3} ta="center">
+                    Stunden Monat
+                  </Table.Th>
+                  <Table.Th colSpan={3} ta="center">
+                    Stunden Jahr
+                  </Table.Th>
+                  <Table.Th colSpan={2} ta="center">
+                    Überstunden
+                  </Table.Th>
+                  <Table.Th ta="center">Urlaub Monat</Table.Th>
+                  <Table.Th colSpan={2} ta="center">
+                    Urlaub Jahr
+                  </Table.Th>
+                  <Table.Th ta="center">Resturlaub</Table.Th>
+                  <Table.Th colSpan={2} ta="center">
+                    Krankentage
+                  </Table.Th>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Th ta="center">Ist</Table.Th>
+                  <Table.Th ta="center">Soll</Table.Th>
+                  <Table.Th ta="center">Plan</Table.Th>
+                  <Table.Th ta="center">Ist</Table.Th>
+                  <Table.Th ta="center">Soll</Table.Th>
+                  <Table.Th ta="center">Plan</Table.Th>
+                  <Table.Th ta="center">Ist</Table.Th>
+                  <Table.Th ta="center">Plan</Table.Th>
+                  <Table.Th ta="center">Ist</Table.Th>
+                  <Table.Th ta="center">Ist</Table.Th>
+                  <Table.Th ta="center">Soll</Table.Th>
+                  <Table.Th ta="center">Vorjahr</Table.Th>
+                  <Table.Th ta="center">Monat</Table.Th>
+                  <Table.Th ta="center">Jahr</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
@@ -135,10 +159,18 @@ export default function TimeAccountSimple() {
                     </Table.Td>
                     <Table.Td ta="right">{fmt(r.mHours)}</Table.Td>
                     <Table.Td ta="right">{fmt(r.mHoursPlan)}</Table.Td>
+                    <Table.Td ta="right">{fmt(r.mHoursPlanned)}</Table.Td>
                     <Table.Td ta="right">{fmt(r.yHours)}</Table.Td>
                     <Table.Td ta="right">{fmt(r.yHoursPlan)}</Table.Td>
+                    <Table.Td ta="right">{fmt(r.yHoursPlanned)}</Table.Td>
                     <Table.Td ta="right" c={r.overtime >= 0 ? 'green' : 'red'}>
                       {fmt(r.overtime)}
+                    </Table.Td>
+                    <Table.Td
+                      ta="right"
+                      c={r.overtimePlanned >= 0 ? 'green' : 'red'}
+                    >
+                      {fmt(r.overtimePlanned)}
                     </Table.Td>
                     <Table.Td ta="right">{fmt(r.mVacation)}</Table.Td>
                     <Table.Td ta="right">{fmt(r.yVacation)}</Table.Td>

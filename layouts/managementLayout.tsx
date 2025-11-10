@@ -22,7 +22,7 @@ import {
   IconCalendarCheck,
   IconClock2,
 } from '@tabler/icons-react';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { hasRole } from '@/lib/auth';
@@ -150,7 +150,7 @@ export default function ManagementLayout({
           <div className="py-4">
             {groups.map((g) => {
               return (
-                <>
+                <Fragment key={g.title}>
                   <div className="ml-3">
                     {!collapsed && (
                       <Text size="xs" c="dimmed" ml="md" mb={5}>
@@ -203,7 +203,7 @@ export default function ManagementLayout({
                         </div>
                       );
                     })}
-                </>
+                </Fragment>
               );
             })}
           </div>

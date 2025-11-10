@@ -21,8 +21,8 @@ export async function getDepsUpdatedAtForMonth(y: number, m: number) {
   const start = new Date(Date.UTC(y, m, 1, 0, 0, 0, 0));
   const end = new Date(Date.UTC(y, m + 1, 0, 23, 59, 59, 999));
 
-  const [shiftMax, prMax, contractMax, userMax, holidayMax] = await Promise.all(
-    [
+  const [shiftMax, prMax, contractMax, userMax, holidayMax, vacationDayMax] =
+    await Promise.all([
       prisma.shift.aggregate({
         _max: { updatedAt: true },
         where: { NOT: [{ end: { lte: start } }], start: { lt: end } },
@@ -34,8 +34,10 @@ export async function getDepsUpdatedAtForMonth(y: number, m: number) {
         _max: { createdAt: true },
         where: { AND: [{ date: { gte: start } }, { date: { lte: end } }] },
       }),
-    ]
-  );
+      prisma.vacationDay.aggregate({
+        _max: { createdAt: true },
+      }),
+    ]);
 
   return new Date(
     Math.max(
@@ -43,7 +45,8 @@ export async function getDepsUpdatedAtForMonth(y: number, m: number) {
       prMax._max.updatedAt?.getTime() ?? 0,
       contractMax._max.updatedAt?.getTime() ?? 0,
       userMax._max.updatedAt?.getTime() ?? 0,
-      holidayMax._max.createdAt?.getTime() ?? 0
+      holidayMax._max.createdAt?.getTime() ?? 0,
+      vacationDayMax._max.createdAt?.getTime() ?? 0
     )
   );
 }
