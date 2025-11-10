@@ -190,6 +190,25 @@ export async function calculateWorkingStats(
     },
   });
 
+  const statsDezLastYear = await prisma.kpiCache.findUnique({
+    where: {
+      type_year_monthIndex: {
+        type: 'TIMEACCOUNT',
+        year: year - 1,
+        monthIndex: 11,
+      },
+    },
+  });
+
+  const getRestVacation = (userId: string) => {
+    if (!statsDezLastYear) return 0;
+    const userStats = (statsDezLastYear.payload as WorkingStatsEntry[]).find(
+      (e) => e.user.id === userId
+    );
+    if (!userStats) return 0;
+    return userStats.yVacationPlan - userStats.yVacation;
+  };
+
   const list = [];
   for (const u of users) {
     const entry = {
@@ -205,7 +224,7 @@ export async function calculateWorkingStats(
       mVacation: 0, // X
       yVacation: 0, // X
       yVacationPlan: 0, // X
-      rVacationPrevYear: 0, //
+      rVacationPrevYear: getRestVacation(u.id), //
       mSickDays: 0, // X
       ySickDays: 0, // X
     };
