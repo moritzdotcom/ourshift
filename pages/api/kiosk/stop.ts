@@ -13,7 +13,9 @@ export default async function handler(
   const pinHash = req.cookies.kiosk_unlock_hash;
   const backupSession = req.cookies.os_session_backup;
   if (!pinHash || !backupSession)
-    return res.status(401).json({ error: 'Invalid Cookies' });
+    return res
+      .status(200)
+      .json({ ok: true, redirectTo: '/management/dashboard' });
 
   // compare
   const isValid = await verifyPin(pinHash, pinAttempt);
