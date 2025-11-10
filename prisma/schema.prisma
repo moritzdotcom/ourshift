@@ -246,4 +246,5 @@ enum TimeSource {
 enum KpiType {
   PAYROLL
   DASHBOARD
+  TIMEACCOUNT
 }

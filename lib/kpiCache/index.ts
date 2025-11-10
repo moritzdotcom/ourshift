@@ -1,8 +1,21 @@
 import prisma from '@/lib/prismadb';
 import { buildPayrollForMonth } from '../payroll';
 import { failureResp, isOk, successResp } from '../apiResponse';
-import { recalcMonthDashboardFull } from './dashboard';
-import { recalcMonthPayroll } from './payroll';
+import { DashboardPayload, recalcMonthDashboardFull } from './dashboard';
+import { PayrollPayload, recalcMonthPayroll } from './payroll';
+import { KpiCache, KpiType } from '@/generated/prisma';
+import { TimeAccountPayload } from './timeAccount';
+
+type PayloadByType = {
+  PAYROLL: PayrollPayload;
+  DASHBOARD: DashboardPayload;
+  TIMEACCOUNT: TimeAccountPayload;
+};
+
+export type KpiCacheType<T extends KpiType = KpiType> = KpiCache & {
+  kpiType: T;
+  payload: PayloadByType[T];
+};
 
 export async function getDepsUpdatedAtForMonth(y: number, m: number) {
   const start = new Date(Date.UTC(y, m, 1, 0, 0, 0, 0));
