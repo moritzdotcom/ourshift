@@ -205,9 +205,8 @@ function PlannerToolbarContent({
         {shiftCodes
           .sort((a, b) => a.sortOrder - b.sortOrder)
           .map((c, idx) => (
-            <Tooltip label={c.label}>
+            <Tooltip key={c.id} label={c.label}>
               <button
-                key={c.id}
                 className={`px-3 py-1.5 rounded-xl border shadow-sm shift-code-${
                   c.color
                 } ${

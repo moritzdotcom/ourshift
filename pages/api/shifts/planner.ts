@@ -26,6 +26,8 @@ export type ApiGetShiftsPlannerResponse = Array<{
   userId: string;
   code: Prisma.ShiftCodeGetPayload<{}> | 'U';
   start: string;
+  clockIn: string | null;
+  clockOut: string | null;
   isSick: boolean;
 }>;
 
@@ -46,7 +48,15 @@ async function handleGET(req: NextApiRequest, res: NextApiResponse) {
 
     const shifts = await prisma.shift.findMany({
       where: shiftWhere,
-      include: { code: true, shiftAbsence: true },
+      select: {
+        id: true,
+        userId: true,
+        code: true,
+        start: true,
+        clockIn: true,
+        clockOut: true,
+        shiftAbsence: { select: { status: true } },
+      },
       orderBy: { start: 'asc' },
     });
 
@@ -62,6 +72,8 @@ async function handleGET(req: NextApiRequest, res: NextApiResponse) {
         userId: s.userId,
         code: s.code,
         start: s.start.toISOString(),
+        clockIn: s.clockIn ? s.clockIn.toISOString() : null,
+        clockOut: s.clockOut ? s.clockOut.toISOString() : null,
         isSick: s.shiftAbsence?.status === 'APPROVED',
       });
     }
@@ -72,6 +84,8 @@ async function handleGET(req: NextApiRequest, res: NextApiResponse) {
         userId: vaca.userId,
         code: 'U',
         start: vaca.date.toISOString(),
+        clockIn: null,
+        clockOut: null,
         isSick: false,
       });
     }

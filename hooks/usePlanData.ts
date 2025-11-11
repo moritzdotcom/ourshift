@@ -8,6 +8,8 @@ export type ShiftObj = {
   id: string;
   code?: ShiftCode | 'U';
   isSick?: boolean;
+  clockIn: string | null;
+  clockOut: string | null;
 };
 
 export type PlanMode = 'CREATE' | 'UPDATE' | 'DELETE';
@@ -77,6 +79,8 @@ export function usePlanData(
               id: `new_shift_${new Date().getTime()}`,
               state: 'new',
               code: shiftCode,
+              clockIn: null,
+              clockOut: null,
             },
           ],
         };
@@ -89,6 +93,8 @@ export function usePlanData(
               id: `new_shift_${new Date().getTime()}`,
               state: 'new',
               code: shiftCode,
+              clockIn: null,
+              clockOut: null,
             },
           ],
         };
@@ -112,6 +118,8 @@ export function usePlanData(
               id: `new_shift_${new Date().getTime()}`,
               state: 'new',
               code: shiftCode,
+              clockIn: null,
+              clockOut: null,
             },
           ],
         };

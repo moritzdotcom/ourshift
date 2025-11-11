@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from 'react';
 import { Holiday, ShiftCode } from '@/generated/prisma';
 import { PlanMode, ShiftObj } from '@/hooks/usePlanData';
 import { ActionIcon, Text, Tooltip } from '@mantine/core';
@@ -8,6 +7,8 @@ import { IconPrinter } from '@tabler/icons-react';
 import { KpiCacheType } from '@/lib/kpiCache';
 import axios from 'axios';
 import { WorkingStatsEntry } from '@/lib/timeAccount';
+import useSWR from 'swr';
+import { Fragment } from 'react';
 
 function daysInMonth(year: number, monthIndex: number) {
   return new Date(year, monthIndex + 1, 0).getDate();
@@ -87,29 +88,23 @@ export default function PlannerGridMonth({
   const headerDates = Array.from({ length: days }, (_, i) => i + 1);
   const today = new Date();
 
-  const [taData, setTaData] = useState<WorkingStatsEntry[] | null>(null);
+  const taFetcher = () =>
+    axios
+      .get<KpiCacheType<'TIMEACCOUNT'>>(`/api/users/timeAccount`, {
+        params: { year, month },
+      })
+      .then((r) => r.data.payload);
+
+  const { data: taData, isLoading } = useSWR<WorkingStatsEntry[]>(
+    `/api/shifts/currentShift/${year}/${month}`,
+    taFetcher
+  );
 
   function findHoliday(iso: string) {
     return holidays.find(
       (h) => new Date(h.date).toISOString().slice(0, 10) === iso
     );
   }
-
-  async function fetchTimeAccountData() {
-    const { data } = await axios.get<KpiCacheType<'TIMEACCOUNT'>>(
-      '/api/users/timeAccount',
-      {
-        params: { year, month },
-      }
-    );
-    setTaData(data.payload);
-    return data;
-  }
-
-  useEffect(() => {
-    if (typeof year === 'number' && typeof month === 'number')
-      fetchTimeAccountData();
-  }, [year, month]);
 
   const bounds = monthBounds(year, month);
 
@@ -192,7 +187,7 @@ export default function PlannerGridMonth({
           {employees.map((emp) => {
             const empTaData = taData?.find((d) => d.user.id === emp.id);
             return (
-              <React.Fragment key={emp.id}>
+              <Fragment key={emp.id}>
                 {/* Sticky name cell + row action */}
                 <div className="sticky left-0 z-10 bg-white border-t border-r p-2 flex flex-col gap-1 justify-between">
                   <div className="flex items-center h-full gap-2">
@@ -211,7 +206,7 @@ export default function PlannerGridMonth({
                       <Text
                         size="xs"
                         c="dimmed"
-                        className={empTaData ? '' : `animate-pulse`}
+                        className={isLoading ? 'animate-pulse' : ''}
                       >
                         UT:{' '}
                         {empTaData
@@ -223,7 +218,7 @@ export default function PlannerGridMonth({
                       <Text
                         size="xs"
                         c="dimmed"
-                        className={empTaData ? '' : `animate-pulse`}
+                        className={isLoading ? 'animate-pulse' : ''}
                       >
                         STD:{' '}
                         {empTaData
@@ -243,7 +238,7 @@ export default function PlannerGridMonth({
                               : 'red'
                             : 'dimmed'
                         }
-                        className={empTaData ? '' : `animate-pulse`}
+                        className={isLoading ? 'animate-pulse' : ''}
                       >
                         ÜS:{' '}
                         {empTaData
@@ -280,7 +275,7 @@ export default function PlannerGridMonth({
                     />
                   );
                 })}
-              </React.Fragment>
+              </Fragment>
             );
           })}
         </div>

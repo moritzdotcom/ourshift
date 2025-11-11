@@ -3,6 +3,8 @@ import { PlanMode, ShiftObj } from '@/hooks/usePlanData';
 import ShiftCodeBadge from '../shiftCodes/badge';
 import { shiftCodeBadgeContent, shiftCodeColor } from '@/lib/shiftCode';
 import { useMemo } from 'react';
+import { Tooltip } from '@mantine/core';
+import { timeToHuman } from '@/lib/dates';
 
 export default function PlannerCell({
   weekend,
@@ -169,7 +171,14 @@ function ShiftObjectInCell({
   activeCode: ShiftCode | 'K' | 'U';
   tryWriteCell: (existingId: string | undefined | null, del: boolean) => void;
 }) {
-  const { id, code = '', isSick = false, state } = cellValue || {};
+  const {
+    id,
+    code = '',
+    isSick = false,
+    state,
+    clockIn,
+    clockOut,
+  } = cellValue || {};
 
   const onMouseDown = (e: React.MouseEvent) => {
     if (e.altKey) {
@@ -184,28 +193,45 @@ function ShiftObjectInCell({
   };
 
   return (
-    <div onMouseDown={onMouseDown} className="group/item">
-      {mode === 'UPDATE' && (
-        <div
-          className={`group-hover/item:block hidden px-2 py-0.5 rounded-md text-xs font-semibold opacity-40 ${shiftCodeColor(
-            activeCode
-          )}`}
-        >
-          {shiftCodeBadgeContent(activeCode)}
-        </div>
-      )}
-      <ShiftCodeBadge
-        code={state === 'deleted' ? '' : isSick ? 'K' : code}
-        className={`animate-ping-return ${
-          !isPast && mode === 'UPDATE' ? 'group-hover/item:hidden' : ''
-        } ${
-          !isPast && mode === 'DELETE'
-            ? 'group-hover/item:line-through group-hover/item:opacity-40'
-            : ''
-        } ${code === '' || state === 'deleted' ? 'text-gray-300' : ''}`}
+    <Tooltip
+      color="gray"
+      events={{
+        hover: Boolean(clockIn && clockOut),
+        focus: Boolean(clockIn && clockOut),
+        touch: false,
+      }}
+      label={`⚠️ Stempelzeiten: ${timeToHuman(
+        new Date(clockIn || 0)
+      )} - ${timeToHuman(new Date(clockOut || 0))}`}
+    >
+      <div
+        onMouseDown={onMouseDown}
+        className="group/item w-full flex justify-center"
       >
-        {shiftCodeBadgeContent(state === 'deleted' ? '' : isSick ? 'K' : code)}
-      </ShiftCodeBadge>
-    </div>
+        {mode === 'UPDATE' && (
+          <div
+            className={`group-hover/item:block hidden px-2 py-0.5 rounded-md text-xs font-semibold opacity-40 ${shiftCodeColor(
+              activeCode
+            )}`}
+          >
+            {shiftCodeBadgeContent(activeCode)}
+          </div>
+        )}
+        <ShiftCodeBadge
+          code={state === 'deleted' ? '' : isSick ? 'K' : code}
+          className={`animate-ping-return ${
+            !isPast && mode === 'UPDATE' ? 'group-hover/item:hidden' : ''
+          } ${
+            !isPast && mode === 'DELETE'
+              ? 'group-hover/item:line-through group-hover/item:opacity-40'
+              : ''
+          } ${code === '' || state === 'deleted' ? 'text-gray-300' : ''}`}
+        >
+          {shiftCodeBadgeContent(
+            state === 'deleted' ? '' : isSick ? 'K' : code
+          )}
+        </ShiftCodeBadge>
+      </div>
+    </Tooltip>
   );
 }

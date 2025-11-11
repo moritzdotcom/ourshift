@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import Router from 'next/router';
 import ManagementLayout from '@/layouts/managementLayout';
@@ -20,6 +20,12 @@ import { usePlanData } from '@/hooks/usePlanData';
 import { useUnsavedGuard } from '@/hooks/useUnsavedGuard';
 import { ApiGetShiftsPlannerResponse } from '../../api/shifts/planner';
 import { employedInMonth } from '@/lib/user';
+
+const monthKey = (y: number, m0: number) =>
+  `${y}-${String(m0 + 1).padStart(2, '0')}`;
+
+const startOfMonth = (y: number, m0: number) => new Date(y, m0, 1);
+const startOfNextMonth = (y: number, m0: number) => new Date(y, m0 + 1, 1);
 
 export default function PlanPage() {
   const today = new Date();
@@ -76,48 +82,55 @@ export default function PlanPage() {
     loadAll();
   }, []);
 
+  const loadedMonthsRef = useRef<Set<string>>(new Set());
   // Load shifts for period
   useEffect(() => {
-    async function loadShifts() {
-      const from = dateToISO(new Date(startYear, startMonth, 1));
+    const key = monthKey(startYear, startMonth);
+    if (loadedMonthsRef.current.has(key)) return; // ✅ schon da, nichts laden
+
+    const from = dateToISO(startOfMonth(startYear, startMonth));
+    const to = dateToISO(startOfNextMonth(startYear, startMonth)); // [from, to)
+
+    const controller = new AbortController();
+
+    async function loadMonth() {
       const { data } = await axios.get<ApiGetShiftsPlannerResponse>(
         '/api/shifts/planner',
-        {
-          params: { from },
-        }
+        { params: { from, to }, signal: controller.signal }
       );
-      const initialData: Record<string, any> = {};
+
+      const monthData: Record<string, any[]> = {};
       for (const s of data) {
         const d = new Date(s.start);
         const k = `${
           s.userId
         }|${d.getFullYear()}|${d.getMonth()}|${d.getDate()}`;
-        if (initialData[k]) {
-          initialData[k].push({
-            state: 'unchanged',
-            id: s.id,
-            code: s.code || undefined,
-            isSick: s.isSick || false,
-          });
-        } else {
-          initialData[k] = [
-            {
-              state: 'unchanged',
-              id: s.id,
-              code: s.code || undefined,
-              isSick: s.isSick || false,
-            },
-          ];
-        }
+        (monthData[k] ||= []).push({
+          state: 'unchanged',
+          id: s.id,
+          code: s.code || undefined,
+          isSick: s.isSick || false,
+          clockIn: s.clockIn,
+          clockOut: s.clockOut,
+        });
       }
+
       setData((prev) => {
-        const merged = { ...(initialData as any), ...(prev as any) };
+        const merged = { ...prev, ...monthData };
         baseDataRef.current = buildNormalizedFromData(merged);
-        return { ...initialData, ...prev };
+        return merged;
       });
+
+      loadedMonthsRef.current.add(key); // ✅ merken
     }
-    loadShifts();
-  }, [startMonth, startYear, setData, baseDataRef]);
+
+    loadMonth().catch((e) => {
+      if (axios.isCancel(e)) return;
+      console.error('load month failed', e);
+    });
+
+    return () => controller.abort();
+  }, [startYear, startMonth, setData, baseDataRef]);
 
   // Save
   async function handleSave() {
