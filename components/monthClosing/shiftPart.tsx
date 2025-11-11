@@ -62,7 +62,7 @@ export default function MonthClosingShiftPart({
         Std.
       </div>
 
-      {part.heightPx > 59 && !isSick && (
+      {!isSick && (
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
           <Tooltip
             label={part.isStamped ? 'Zeiten korrigieren' : 'Zeiten Nachtragen'}

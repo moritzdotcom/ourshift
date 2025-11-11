@@ -11,8 +11,15 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { IconCalendar, IconCheck, IconPrinter } from '@tabler/icons-react';
+import {
+  IconCalendar,
+  IconCheck,
+  IconPrinter,
+  IconZoomIn,
+  IconZoomOut,
+} from '@tabler/icons-react';
 import Link from 'next/link';
+import { Dispatch, SetStateAction } from 'react';
 
 export default function MonthClosingHeader({
   shifts,
@@ -20,18 +27,30 @@ export default function MonthClosingHeader({
   month,
   setYear,
   setMonth,
+  columnWidth,
+  setColumnWidth,
 }: {
   shifts: MonthClosingShift[];
   year: number;
   month: number;
   setYear: (y: number) => void;
   setMonth: (m: number) => void;
+  columnWidth: number;
+  setColumnWidth: Dispatch<SetStateAction<number>>;
 }) {
   function monthLabel(y: number, m: number) {
     return new Date(y, m, 1).toLocaleDateString('de', {
       month: 'long',
       year: 'numeric',
     });
+  }
+
+  function zoomIn() {
+    setColumnWidth((p) => Math.min(p + 60, 300));
+  }
+
+  function zoomOut() {
+    setColumnWidth((p) => Math.max(p - 60, 60));
   }
 
   const stats = useMonthClosingStats(shifts);
@@ -79,6 +98,24 @@ export default function MonthClosingHeader({
         />
       </Group>
       <Group>
+        <ActionIcon
+          onClick={zoomIn}
+          variant="subtle"
+          color="indigo"
+          disabled={columnWidth >= 300}
+          size="lg"
+        >
+          <IconZoomIn />
+        </ActionIcon>
+        <ActionIcon
+          onClick={zoomOut}
+          variant="subtle"
+          color="indigo"
+          disabled={columnWidth <= 60}
+          size="lg"
+        >
+          <IconZoomOut />
+        </ActionIcon>
         {/* Monat/Jahr Auswahl */}
         <Select
           leftSection={<IconCalendar size={16} />}

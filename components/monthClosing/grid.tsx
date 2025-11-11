@@ -13,11 +13,13 @@ export default function MonthClosingGrid({
   month,
   shifts,
   onUpdate,
+  columnWidth,
 }: {
   year: number;
   month: number;
   shifts: MonthClosingShift[];
   onUpdate: (part: MonthClosingShift, del?: boolean) => void;
+  columnWidth: number;
 }) {
   const HEADER_HEIGHT = 50;
   const HOUR_HEIGHT = 30;
@@ -47,7 +49,7 @@ export default function MonthClosingGrid({
       <div
         className="w-full h-full overflow-x-scroll grid bg-white rounded"
         style={{
-          gridTemplateColumns: `repeat(${days.length}, 120px)`,
+          gridTemplateColumns: `repeat(${days.length}, ${columnWidth}px)`,
           height: 24 * HOUR_HEIGHT + HEADER_HEIGHT,
           position: 'relative',
         }}
