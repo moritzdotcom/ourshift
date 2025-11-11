@@ -21,11 +21,35 @@ import { useUnsavedGuard } from '@/hooks/useUnsavedGuard';
 import { ApiGetShiftsPlannerResponse } from '../../api/shifts/planner';
 import { employedInMonth } from '@/lib/user';
 
-const monthKey = (y: number, m0: number) =>
-  `${y}-${String(m0 + 1).padStart(2, '0')}`;
-
 const startOfMonth = (y: number, m0: number) => new Date(y, m0, 1);
-const startOfNextMonth = (y: number, m0: number) => new Date(y, m0 + 1, 1);
+const addMonths = (d: Date, n: number) =>
+  new Date(d.getFullYear(), d.getMonth() + n, 1);
+
+type Range = { from: Date; to: Date }; // [from, to) (to = 1. des Folgemonats)
+
+// Ermittelt fehlende Segmente relativ zu 'loaded'.
+// Rückgabe: 0..2 Segmente, die nachgeladen werden sollten.
+function diffMissingSegments(loaded: Range | null, desired: Range): Range[] {
+  if (!loaded) return [desired];
+
+  const segs: Range[] = [];
+
+  // linkes fehlendes Stück
+  if (desired.from < loaded.from) {
+    segs.push({
+      from: desired.from,
+      to: new Date(Math.min(loaded.from.getTime(), desired.to.getTime())),
+    });
+  }
+  // rechtes fehlendes Stück
+  if (desired.to > loaded.to) {
+    segs.push({
+      from: new Date(Math.max(loaded.to.getTime(), desired.from.getTime())),
+      to: desired.to,
+    });
+  }
+  return segs;
+}
 
 export default function PlanPage() {
   const today = new Date();
@@ -82,55 +106,67 @@ export default function PlanPage() {
     loadAll();
   }, []);
 
-  const loadedMonthsRef = useRef<Set<string>>(new Set());
+  const loadedRangeRef = useRef<{ from: Date; to: Date } | null>(null);
   // Load shifts for period
   useEffect(() => {
-    const key = monthKey(startYear, startMonth);
-    if (loadedMonthsRef.current.has(key)) return; // ✅ schon da, nichts laden
+    const desired: Range = {
+      from: startOfMonth(startYear, startMonth),
+      to: addMonths(startOfMonth(startYear, startMonth), numMonths),
+    };
 
-    const from = dateToISO(startOfMonth(startYear, startMonth));
-    const to = dateToISO(startOfNextMonth(startYear, startMonth)); // [from, to)
+    const missing = diffMissingSegments(loadedRangeRef.current, desired);
+    if (missing.length === 0) return;
 
-    const controller = new AbortController();
+    // Du kannst entweder beide Segmente nacheinander laden (wenn 2)
+    // oder sie zu einem großen Intervall zusammenfassen (lädt Mittelteil erneut).
+    (async () => {
+      for (const seg of missing) {
+        const { data } = await axios.get<ApiGetShiftsPlannerResponse>(
+          '/api/shifts/planner',
+          { params: { from: dateToISO(seg.from), to: dateToISO(seg.to) } }
+        );
 
-    async function loadMonth() {
-      const { data } = await axios.get<ApiGetShiftsPlannerResponse>(
-        '/api/shifts/planner',
-        { params: { from, to }, signal: controller.signal }
-      );
-
-      const monthData: Record<string, any[]> = {};
-      for (const s of data) {
-        const d = new Date(s.start);
-        const k = `${
-          s.userId
-        }|${d.getFullYear()}|${d.getMonth()}|${d.getDate()}`;
-        (monthData[k] ||= []).push({
-          state: 'unchanged',
-          id: s.id,
-          code: s.code || undefined,
-          isSick: s.isSick || false,
-          clockIn: s.clockIn,
-          clockOut: s.clockOut,
+        // ...normalisieren & mergen wie bisher...
+        const chunk: Record<string, any[]> = {};
+        for (const s of data) {
+          const d = new Date(s.start);
+          const k = `${
+            s.userId
+          }|${d.getFullYear()}|${d.getMonth()}|${d.getDate()}`;
+          (chunk[k] ||= []).push({
+            state: 'unchanged',
+            id: s.id,
+            code: s.code || undefined,
+            isSick: s.isSick || false,
+            clockIn: s.clockIn,
+            clockOut: s.clockOut,
+          });
+        }
+        setData((prev) => {
+          const merged = { ...prev, ...chunk };
+          baseDataRef.current = buildNormalizedFromData(merged);
+          return merged;
         });
+
+        // loadedRange erweitern
+        if (!loadedRangeRef.current) {
+          loadedRangeRef.current = { ...seg };
+        } else {
+          loadedRangeRef.current = {
+            from: new Date(
+              Math.min(
+                loadedRangeRef.current.from.getTime(),
+                seg.from.getTime()
+              )
+            ),
+            to: new Date(
+              Math.max(loadedRangeRef.current.to.getTime(), seg.to.getTime())
+            ),
+          };
+        }
       }
-
-      setData((prev) => {
-        const merged = { ...prev, ...monthData };
-        baseDataRef.current = buildNormalizedFromData(merged);
-        return merged;
-      });
-
-      loadedMonthsRef.current.add(key); // ✅ merken
-    }
-
-    loadMonth().catch((e) => {
-      if (axios.isCancel(e)) return;
-      console.error('load month failed', e);
-    });
-
-    return () => controller.abort();
-  }, [startYear, startMonth, setData, baseDataRef]);
+    })();
+  }, [startYear, startMonth, numMonths, setData, baseDataRef]);
 
   // Save
   async function handleSave() {
