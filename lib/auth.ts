@@ -36,13 +36,6 @@ export async function signSession(
     .sign(getSecret());
 }
 
-export async function verifySession(token: string) {
-  const { payload } = await jwtVerify(token, getSecret(), {
-    algorithms: [ALG],
-  });
-  return payload as SessionPayload & JWTPayload;
-}
-
 export function setAuthCookie(
   res: NextApiResponse,
   token: string,
@@ -81,11 +74,54 @@ export function readAuthCookie(req: NextApiRequest) {
   return map[COOKIE_NAME] || null;
 }
 
+export function getAuthTokenFromReq(req: NextApiRequest): string | null {
+  // 1) Authorization header
+  const auth = req.headers.authorization;
+  if (auth?.startsWith('Bearer ')) {
+    return auth.split(' ')[1];
+  }
+
+  // 2) fallback: Cookie (wie vorher)
+  const raw = req.headers.cookie || '';
+  if (!raw) return null;
+  const map = Object.fromEntries(
+    raw.split(';').map((c) => {
+      const [k, ...v] = c.trim().split('=');
+      return [decodeURIComponent(k), decodeURIComponent(v.join('='))];
+    })
+  );
+  return map[COOKIE_NAME] || null;
+}
+
+export async function verifySession(
+  token: string,
+  { allowRefresh = false }: { allowRefresh?: boolean } = {}
+) {
+  try {
+    const { payload } = await jwtVerify(token, getSecret(), {
+      algorithms: [ALG],
+    });
+    const type = (payload as any).type;
+    if (type === 'refresh' && !allowRefresh) {
+      throw new Error('Refresh token not allowed here');
+    }
+    return payload as SessionPayload & JWTPayload;
+  } catch (err) {
+    throw err;
+  }
+}
+
 export async function getCurrentUser(req: NextApiRequest) {
-  const token = readAuthCookie(req);
+  const token = getAuthTokenFromReq(req);
   if (!token) return failureResp('user', undefined, 'Unauthorized');
 
-  const payload = await verifySession(token);
+  let payload: SessionPayload & JWTPayload;
+  try {
+    payload = await verifySession(token); // allowRefresh = false per default
+  } catch (e) {
+    return failureResp('user', undefined, 'Invalid session');
+  }
+
   const userId = payload.sub;
   if (!userId) return failureResp('user', undefined, 'Invalid session');
 
@@ -101,15 +137,22 @@ export async function getCurrentUser(req: NextApiRequest) {
       isActive: true,
     },
   });
+
   if (!user) return failureResp('user', undefined, 'User not found');
   return successResp('user', user);
 }
 
 export async function getCurrentUserId(req: NextApiRequest) {
-  const token = readAuthCookie(req);
+  const token = getAuthTokenFromReq(req);
   if (!token) return failureResp('userId', undefined, 'Unauthorized');
 
-  const payload = await verifySession(token);
+  let payload: SessionPayload & JWTPayload;
+  try {
+    payload = await verifySession(token);
+  } catch (e) {
+    return failureResp('userId', undefined, 'Invalid session');
+  }
+
   const userId = payload.sub;
   if (!userId) return failureResp('userId', undefined, 'Invalid Session');
 
