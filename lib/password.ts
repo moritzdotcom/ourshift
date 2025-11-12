@@ -87,3 +87,19 @@ export async function verifyPin(hash: string, pin: string): Promise<boolean> {
     return false;
   }
 }
+
+export async function hashToken(token: string) {
+  return await argon2.hash(token, ARGON2_OPTS);
+}
+
+export async function compareTokenHash(
+  token: string,
+  hash: string
+): Promise<boolean> {
+  try {
+    return await argon2.verify(hash, token);
+  } catch (err) {
+    // verify throws on invalid hash formats etc.
+    return false;
+  }
+}

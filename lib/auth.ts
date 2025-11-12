@@ -21,6 +21,7 @@ export type SessionPayload = {
   role?: 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
   name?: string;
   email?: string | null;
+  type?: 'access' | 'refresh' | 'cookie';
 };
 
 export async function signSession(

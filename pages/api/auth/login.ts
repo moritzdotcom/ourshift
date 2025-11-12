@@ -40,6 +40,7 @@ export default async function handler(
       role: user.role as any,
       name: `${user.firstName} ${user.lastName}`,
       email: user.email ?? null,
+      type: 'cookie',
     },
     { expiresInSec: remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24 }
   );

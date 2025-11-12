@@ -40,6 +40,7 @@ model User {
   shiftAbsences          ShiftAbsence[]
   pushTokens             PushToken[]
   notificationPreference NotificationPreference?
+  refreshTokens          RefreshToken[]
 }
 
 model UserCredential {
@@ -219,6 +220,15 @@ model ShiftNotifyLog {
   sentAt  DateTime @default(now())
 
   @@unique([userId, shiftId, kind]) // keine Doppelversendungen
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 enum Role {
