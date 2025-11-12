@@ -82,6 +82,6 @@ export const config = {
     // - /api (API-Routen)
     // - Next intern
     // - diverse statische/PWA Dateien
-    '/((?!api|_next/static|_next/image|favicon.ico|logo.png|images|fonts|icons|firebase-messaging-sw\\.js|manifest\\.json|site\\.webmanifest|robots\\.txt|sitemap\\.xml|apple-touch-icon\\.png).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|images|fonts|icons|firebase-messaging-sw\\.js|manifest\\.json|site\\.webmanifest|robots\\.txt|sitemap\\.xml|apple-touch-icon\\.png).*)',
   ],
 };

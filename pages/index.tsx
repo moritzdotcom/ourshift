@@ -247,7 +247,7 @@ export default function HomePage() {
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
             <div className="flex items-center gap-3">
               <Image
-                src="/icon.png"
+                src="/icons/icon.png"
                 alt="Logo"
                 width={36}
                 height={36}

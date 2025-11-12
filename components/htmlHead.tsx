@@ -34,7 +34,10 @@ export default function HtmlHead({
       <meta property="og:type" content="website" />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
-      <meta property="og:image" content="https://www.ourshift.de/logo-og.jpg" />
+      <meta
+        property="og:image"
+        content="https://www.ourshift.de/icons/logo-og.jpg"
+      />
       <meta property="og:image:width" content="1000" />
       <meta property="og:image:height" content="500" />
       <meta property="og:image:alt" content="OurShift - Logo" />
@@ -45,7 +48,7 @@ export default function HtmlHead({
       <meta name="twitter:description" content={description} />
       <meta
         name="twitter:image"
-        content="https://www.ourshift.de/logo-og.jpg"
+        content="https://www.ourshift.de/icons/logo-og.jpg"
       />
       <link rel="canonical" href="https://www.ourshift.de/" />
 
