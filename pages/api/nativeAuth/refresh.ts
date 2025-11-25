@@ -13,7 +13,7 @@ export default async function handler(
   if (!refreshToken)
     return res.status(400).json({ message: 'No refresh token' });
 
-  const payload = await verifySession(refreshToken);
+  const payload = await verifySession(refreshToken, { allowRefresh: true });
   if (!payload || payload.type !== 'refresh')
     return res.status(401).json({ message: 'Invalid refresh token' });
 

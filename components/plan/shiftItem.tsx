@@ -1,13 +1,5 @@
 import { timeToHuman } from '@/lib/dates';
-import {
-  Card,
-  Group,
-  Badge,
-  Tooltip,
-  Text,
-  Button,
-  Stack,
-} from '@mantine/core';
+import { Card, Group, Badge, Tooltip, Text, Button } from '@mantine/core';
 import { IconAlertCircle, IconCircleCheck } from '@tabler/icons-react';
 import ShiftCodeBadge from '../shiftCodes/badge';
 import { MyShift } from '@/pages';

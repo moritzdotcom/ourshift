@@ -4,7 +4,6 @@ import {
   Stack,
   Text,
   Progress,
-  Badge,
   Tooltip,
   Divider,
   Skeleton,

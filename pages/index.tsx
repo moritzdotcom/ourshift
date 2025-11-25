@@ -45,14 +45,14 @@ function startOfDay(d = new Date()) {
   x.setHours(0, 0, 0, 0);
   return x;
 }
-function startOfMonth(d = new Date()) {
-  const x = startOfDay(new Date(d));
-  x.setDate(0);
-  return x;
-}
 function addDays(d: Date, n: number) {
   const x = new Date(d);
   x.setDate(x.getDate() + n);
+  return x;
+}
+function subDays(d: Date, n: number) {
+  const x = new Date(d);
+  x.setDate(x.getDate() - n);
   return x;
 }
 
@@ -75,7 +75,7 @@ export default function HomePage() {
   const [pastShiftsSlice, setPastShiftsSlice] = useState(4);
 
   // Zeitraum: letzte 14 Tage bis nächste 14 Tage
-  const from = useMemo(() => startOfMonth().toISOString(), []);
+  const from = useMemo(() => subDays(startOfDay(), 15).toISOString(), []);
   const to = useMemo(() => addDays(startOfDay(), 15).toISOString(), []);
   const now = new Date();
 

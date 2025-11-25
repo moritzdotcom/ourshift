@@ -56,7 +56,13 @@ export default function TakeoverShiftList({
       </Text>
       <div className="w-full flex flex-col gap-3">
         {takeoverShifts.map((s) => {
-          return <TakeoverShiftRow s={s} handleTakeover={handleTakeover} />;
+          return (
+            <TakeoverShiftRow
+              key={`tos-${s.id}`}
+              s={s}
+              handleTakeover={handleTakeover}
+            />
+          );
         })}
       </div>
     </Card>

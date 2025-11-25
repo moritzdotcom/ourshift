@@ -2,21 +2,8 @@ import { Shift } from '@/generated/prisma';
 import { timeToHuman } from '@/lib/dates';
 import { showError, showInfo } from '@/lib/toast';
 import { MyShift } from '@/pages';
-import {
-  Card,
-  Group,
-  ActionIcon,
-  Divider,
-  Badge,
-  Button,
-  Text,
-} from '@mantine/core';
-import {
-  IconExternalLink,
-  IconClockPlay,
-  IconPlayerStop,
-  IconPlayerPlay,
-} from '@tabler/icons-react';
+import { Card, Group, ActionIcon, Divider, Badge, Text } from '@mantine/core';
+import { IconExternalLink, IconClockPlay } from '@tabler/icons-react';
 import axios, { isAxiosError } from 'axios';
 import Link from 'next/link';
 import { useRef } from 'react';
@@ -134,14 +121,26 @@ export default function HomeCurrentShift({
 
       {shift ? (
         <div className="w-full flex flex-col sm:flex-row gap-3 items-start justify-between">
-          <Badge
-            color="green"
-            variant="light"
-            size="lg"
-            leftSection={<IconClockPlay size={14} />}
-          >
-            Läuft seit {timeToHuman(shift.clockIn || shift.start)}
-          </Badge>
+          {(shift.clockIn && !shift.clockOut) ||
+          new Date(shift.start) < new Date() ? (
+            <Badge
+              color="green"
+              variant="light"
+              size="lg"
+              leftSection={<IconClockPlay size={14} />}
+            >
+              Läuft seit {timeToHuman(shift.clockIn || shift.start)}
+            </Badge>
+          ) : (
+            <Badge
+              color="blue"
+              variant="light"
+              size="lg"
+              leftSection={<IconClockPlay size={14} />}
+            >
+              Beginnt um {timeToHuman(shift.clockIn || shift.start)}
+            </Badge>
+          )}
           <div className="w-full sm:max-w-xs">
             {shift.clockIn && !shift.clockOut && shift.code?.isWorkingShift ? (
               <SlideActionButton

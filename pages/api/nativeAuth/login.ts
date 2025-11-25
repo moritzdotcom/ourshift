@@ -14,12 +14,13 @@ export default async function handler(
     where: { email },
     include: { credentials: true },
   });
+
   if (!user || !user.credentials?.passwordHash) {
     return res.status(401).json({ error: 'Ungültige Zugangsdaten.' });
   }
   if (
     !user ||
-    !(await verifyPassword(password, user.credentials?.passwordHash))
+    !(await verifyPassword(user.credentials?.passwordHash, password))
   ) {
     return res.status(401).json({ message: 'Invalid credentials' });
   }
@@ -47,6 +48,7 @@ export default async function handler(
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
+    phone: user.phone,
     role: user.role,
     isActive: user.isActive,
   };

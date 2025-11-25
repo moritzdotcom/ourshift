@@ -23,10 +23,10 @@ export default async function handle(
   if (req.method === 'GET') {
     return res.status(200).json(user);
   } else if (req.method === 'PUT') {
-    const { firstName, lastName, email, isActive } = req.body;
+    const { firstName, lastName, email, phone, isActive } = req.body;
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
-      data: { firstName, lastName, email, isActive },
+      data: { firstName, lastName, email, phone, isActive },
     });
     return res.status(200).json(updatedUser);
   } else {
