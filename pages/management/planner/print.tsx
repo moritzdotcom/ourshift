@@ -3,7 +3,6 @@ import { useRouter } from 'next/router';
 import axios from 'axios';
 import { Holiday, ShiftCode } from '@/generated/prisma';
 import { ApiGetSimpleUsersResponse } from '@/pages/api/users';
-import { ApiGetShiftsResponse } from '@/pages/api/shifts';
 import ShiftCodeBadge from '@/components/shiftCodes/badge';
 import { legendLabel, shiftCodeBadgeContent } from '@/lib/shiftCode';
 import { useViewportSize } from '@mantine/hooks';
@@ -11,6 +10,7 @@ import { employedInMonth } from '@/lib/user';
 import Link from 'next/link';
 import { Button } from '@mantine/core';
 import { IconChevronLeft } from '@tabler/icons-react';
+import { ApiGetShiftsPlannerResponse } from '@/pages/api/shifts/planner';
 
 function isWeekend(dt: Date) {
   return dt.getDay() == 0;
@@ -26,11 +26,6 @@ function fullName(u?: ApiGetSimpleUsersResponse[number]) {
   if (!u) return '';
   const s = `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim();
   return s || u.id;
-}
-function renderCode(s: ApiGetShiftsResponse[number]) {
-  if (s.shiftAbsence?.reason === 'SICKNESS') return 'K';
-  if (s.shiftAbsence?.reason === 'VACATION') return 'U';
-  return s.code ?? '';
 }
 
 export default function PlannerPrintPage() {
@@ -49,7 +44,7 @@ export default function PlannerPrintPage() {
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [shiftCodes, setShiftCodes] = useState<ShiftCode[]>([]);
   const [users, setUsers] = useState<ApiGetSimpleUsersResponse>([]);
-  const [shifts, setShifts] = useState<ApiGetShiftsResponse>([]);
+  const [shifts, setShifts] = useState<ApiGetShiftsPlannerResponse>([]);
 
   // Fetch
   useEffect(() => {
@@ -63,7 +58,7 @@ export default function PlannerPrintPage() {
             axios.get<Holiday[]>('/api/holidays'),
             axios.get<ShiftCode[]>('/api/shiftCodes'),
             axios.get<ApiGetSimpleUsersResponse>('/api/users?simple=true'),
-            axios.get<ApiGetShiftsResponse>('/api/shifts', {
+            axios.get<ApiGetShiftsPlannerResponse>('/api/shifts/planner', {
               params: { from: fromStr, to: toStr },
             }),
           ]);
@@ -90,7 +85,7 @@ export default function PlannerPrintPage() {
     for (const id of userIds) m.set(id, new Map());
     for (const s of shifts) {
       const d = new Date(s.start).getDate();
-      const code = renderCode(s);
+      const code = s.code;
       const mm = m.get(s.userId)!;
       const prev = mm.get(d);
       mm.set(d, prev ? [...prev, code] : [code]);

@@ -32,10 +32,14 @@ export function buildVacationDayWhereQuery(
         AND: [{ date: { lt: toDate } }, { date: { gte: fromDate } }],
       };
     } else {
-      where = {
-        ...(fromDate ? { date: { gte: fromDate } } : {}),
-        ...(toDate ? { date: { lte: toDate } } : {}),
-      };
+      if (fromDate && toDate) {
+        where = { date: { gte: fromDate, lte: toDate } };
+      } else {
+        where = {
+          ...(fromDate ? { date: { gte: fromDate } } : {}),
+          ...(toDate ? { date: { lte: toDate } } : {}),
+        };
+      }
     }
   }
   return { where };
