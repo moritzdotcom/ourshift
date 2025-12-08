@@ -9,7 +9,7 @@ import {
   Loader,
 } from '@mantine/core';
 import { PayrollRow } from '@/lib/payroll';
-import { timeToHuman } from '@/lib/dates';
+import { minutesToRoundedHours, timeToHuman } from '@/lib/dates';
 
 function Euro(cents?: number | null) {
   if (!cents) return '—';
@@ -119,7 +119,7 @@ function SupplementsTable({
           <Table.Thead>
             <Table.Tr>
               <Table.Th>Regel</Table.Th>
-              <Table.Th>Minuten</Table.Th>
+              <Table.Th>Stunden</Table.Th>
               <Table.Th>Faktor</Table.Th>
               <Table.Th>Betrag</Table.Th>
             </Table.Tr>
@@ -129,7 +129,7 @@ function SupplementsTable({
               <React.Fragment key={b.ruleId}>
                 <Table.Tr onClick={() => setOpen((o) => !o)}>
                   <Table.Td>{b.name}</Table.Td>
-                  <Table.Td>{b.minutes} min</Table.Td>
+                  <Table.Td>{minutesToRoundedHours(b.minutes)} Std.</Table.Td>
                   <Table.Td>
                     <Badge>{b.percent}%</Badge>
                   </Table.Td>

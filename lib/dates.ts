@@ -12,6 +12,11 @@ export function hhmmToMin(v?: string | null) {
   return h * 60 + m;
 }
 
+export function minutesToRoundedHours(minutes: number) {
+  const hours = minutes / 60;
+  return Math.round(hours * 2) / 2;
+}
+
 export function dateToHuman(d: string | Date | null | undefined) {
   if (!d) return '';
   const date = new Date(d);

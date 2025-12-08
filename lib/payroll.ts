@@ -8,6 +8,7 @@ import {
   toBerlin,
   windowsForDayUtc,
 } from './time';
+import { minutesToRoundedHours } from './dates';
 
 function dayISO(d: Date | string) {
   const x = new Date(d);
@@ -289,7 +290,7 @@ function setHeader(ws: ExcelJS.Worksheet) {
   ws.columns = [
     { header: '', key: 'colA', width: 34 }, // Bezeichnung
     { header: '', key: 'colB', width: 16 }, // Grundlohn/Stunde (€/h)
-    { header: '', key: 'colC', width: 12 }, // Minuten
+    { header: '', key: 'colC', width: 12 }, // Stunden
     { header: '', key: 'colD', width: 10 }, // Faktor
     { header: '', key: 'colE', width: 16 }, // Zuschlag/€ Summen
   ];
@@ -306,7 +307,7 @@ function addEmployeeBlock(
   // Kopfzeile Mitarbeiter
   ws.getCell(r, 1).value = row.userName;
   ws.getCell(r, 2).value = 'Grundlohn/Stunde';
-  ws.getCell(r, 3).value = 'Minuten';
+  ws.getCell(r, 3).value = 'Stunden';
   ws.getCell(r, 4).value = 'Faktor';
   ws.getCell(r, 5).value = 'Zuschlag';
   [1, 2, 3, 4, 5].forEach((c) => {
@@ -323,7 +324,7 @@ function addEmployeeBlock(
     ws.getCell(r, 1).value = supp.name;
     ws.getCell(r, 2).value = centsToEuro(row.baseHourlyCents);
     euroFmt(ws.getCell(r, 2));
-    ws.getCell(r, 3).value = supp.minutes;
+    ws.getCell(r, 3).value = minutesToRoundedHours(supp.minutes);
     ws.getCell(r, 3).numFmt = '#,##';
     ws.getCell(r, 4).value = supp.percent / 100;
     ws.getCell(r, 4).numFmt = '0%';
