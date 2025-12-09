@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "KpiType" ADD VALUE 'USERTIMEACCOUNT';

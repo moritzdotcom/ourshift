@@ -15,6 +15,7 @@ import ManagementLayout from '@/layouts/managementLayout';
 import { WorkingStatsEntry } from '@/lib/timeAccount';
 import { KpiCacheType } from '@/lib/kpiCache';
 import { dateTimeToHuman } from '@/lib/dates';
+import Link from 'next/link';
 
 export default function TimeAccountSimple() {
   const today = new Date();
@@ -155,7 +156,12 @@ export default function TimeAccountSimple() {
                 {(rows ?? []).map((r) => (
                   <Table.Tr key={r.user.id}>
                     <Table.Td>
-                      {r.user.firstName} {r.user.lastName}
+                      <Link
+                        href={`/management/timeAccount/${r.user.id}`}
+                        className="text-blue-600 hover:underline"
+                      >
+                        {r.user.firstName} {r.user.lastName}
+                      </Link>
                     </Table.Td>
                     <Table.Td ta="right">{fmt(r.mHours)}</Table.Td>
                     <Table.Td ta="right">{fmt(r.mHoursPlan)}</Table.Td>
