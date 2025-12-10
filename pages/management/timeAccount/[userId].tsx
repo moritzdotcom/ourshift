@@ -221,7 +221,7 @@ export default function TimeAccountUserPage() {
       | 'sickDays'
   ) {
     if (!data) return 0;
-    if (key === 'overtime') {
+    if (key === 'overtime' || key === 'totalHours') {
       return (
         data.monthlyData.reduce((sum, m) => sum + m[key], 0) + manualAdjustment
       );
@@ -334,7 +334,9 @@ export default function TimeAccountUserPage() {
                         );
                       })}
                       <Table.Td ta="right">
-                        {row.key === 'overtime' ? fmt(manualAdjustment) : '-'}
+                        {row.key === 'overtime' || row.key === 'totalHours'
+                          ? fmt(manualAdjustment)
+                          : '-'}
                       </Table.Td>
                       <Table.Td ta="right" fw={700}>
                         {fmt(getTotalValue(row.key))}
