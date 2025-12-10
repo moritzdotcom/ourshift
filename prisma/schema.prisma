@@ -41,6 +41,7 @@ model User {
   pushTokens             PushToken[]
   notificationPreference NotificationPreference?
   refreshTokens          RefreshToken[]
+  manualAdjustments      ManualAdjustment[]
 }
 
 model UserCredential {
@@ -229,6 +230,17 @@ model RefreshToken {
   expiresAt DateTime
   revoked   Boolean  @default(false)
   user      User     @relation(fields: [userId], references: [id])
+}
+
+model ManualAdjustment {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  hoursAdjustment Decimal  @db.Decimal(10, 2) // z. B. -2.50 oder 3.00
+  year            Int
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, year])
 }
 
 enum Role {

@@ -2,6 +2,7 @@ import { authGuard } from '@/lib/auth';
 import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prismadb';
 import { minutesToRoundedHours } from '@/lib/dates';
+import { pickContractForDate } from '@/lib/digitalContract';
 
 export default async function handle(
   req: NextApiRequest,
@@ -26,12 +27,16 @@ export default async function handle(
 
 type UserTimeAccountMonthlyData = {
   month: number;
+  workedHours: number;
+  vacationHours: number;
+  sickHours: number;
   totalHours: number;
   plannedHours: number;
   overtime: number;
   totalVacation: number;
   plannedVacation: number;
   sickDays: number;
+  averageSalaryCents: number;
 }[];
 
 export type ApiUserTimeAccountResponse = {
@@ -42,6 +47,7 @@ export type ApiUserTimeAccountResponse = {
   };
   year: number;
   monthlyData: UserTimeAccountMonthlyData;
+  manualAdjustment: number;
 };
 
 async function handleGET(
@@ -82,6 +88,10 @@ async function handleGET(
           },
         },
       },
+      manualAdjustments: {
+        where: { year: Number(year) },
+        select: { hoursAdjustment: true },
+      },
     },
   });
 
@@ -110,10 +120,17 @@ async function handleGET(
 
     let workedMinutes = 0;
     let sickDays = 0;
+    let sickMinutes = 0;
+
     for (const shift of monthShifts) {
       const start = shift.clockIn;
       const end = shift.clockOut;
       if (shift.shiftAbsence?.reason === 'SICKNESS') {
+        const contract = pickContractForDate(monthContracts, shift.start);
+        if (contract && contract.weeklyHours) {
+          const dailyHours = contract.weeklyHours.toNumber() / 5; // 5 Arbeitstage pro Woche
+          sickMinutes += dailyHours * 60;
+        }
         sickDays += 1;
         continue;
       }
@@ -124,6 +141,7 @@ async function handleGET(
 
     let plannedMinutes = 0;
     let monthlyVacationGranted = 0;
+    let averageSalaryCents = 0;
 
     for (const contract of monthContracts) {
       if (!contract.weeklyHours) continue;
@@ -137,10 +155,11 @@ async function handleGET(
         contractStart > monthStart ? contractStart : monthStart;
       const effectiveEnd = contractEnd < monthEnd ? contractEnd : monthEnd;
 
-      const daysInMonth =
+      const daysInMonth = Math.round(
         (effectiveEnd.getTime() - effectiveStart.getTime()) /
           (1000 * 60 * 60 * 24) +
-        1;
+          1
+      );
       const daysInFullMonth = monthEnd.getDate();
       const weeksInMonth = (daysInMonth / daysInFullMonth) * 4.35;
 
@@ -148,20 +167,38 @@ async function handleGET(
         ((contract.vacationDaysAnnual || 0) / 12) *
         (daysInMonth / daysInFullMonth);
       plannedMinutes += weeksInMonth * (contract.weeklyHours.toNumber() * 60);
+      averageSalaryCents +=
+        (contract.hourlyRateCents || 0) * (daysInMonth / daysInFullMonth);
     }
 
-    const vacationDaysInMonth = user.vacationDays.filter(
-      (vd) => vd.date.getMonth() === month
-    ).length;
+    let vacationMinutes = 0;
+    let vacationDaysInMonth = 0;
+    for (const vd of user.vacationDays) {
+      if (vd.date.getMonth() === month) {
+        // Annahme: 8 Stunden pro Urlaubstag
+        vacationDaysInMonth += 1;
+
+        const contract = pickContractForDate(monthContracts, vd.date);
+        if (contract && contract.weeklyHours) {
+          const dailyHours = contract.weeklyHours.toNumber() / 5; // 5 Arbeitstage pro Woche
+          vacationMinutes += dailyHours * 60;
+        }
+      }
+    }
+    const totalMinutes = workedMinutes + vacationMinutes + sickMinutes;
 
     data.push({
       month: month,
-      totalHours: minutesToRoundedHours(workedMinutes),
+      workedHours: minutesToRoundedHours(workedMinutes),
+      vacationHours: minutesToRoundedHours(vacationMinutes),
+      sickHours: minutesToRoundedHours(sickMinutes),
+      totalHours: minutesToRoundedHours(totalMinutes),
       plannedHours: minutesToRoundedHours(plannedMinutes),
-      overtime: minutesToRoundedHours(workedMinutes - plannedMinutes),
+      overtime: minutesToRoundedHours(totalMinutes - plannedMinutes),
       totalVacation: vacationDaysInMonth,
       plannedVacation: monthlyVacationGranted,
       sickDays: sickDays,
+      averageSalaryCents: Math.round(averageSalaryCents),
     });
   }
 
@@ -173,5 +210,7 @@ async function handleGET(
     },
     year: Number(year),
     monthlyData: data,
+    manualAdjustment:
+      user.manualAdjustments[0]?.hoursAdjustment?.toNumber() || 0,
   });
 }
