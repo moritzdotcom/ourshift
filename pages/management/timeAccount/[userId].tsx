@@ -218,10 +218,14 @@ export default function TimeAccountUserPage() {
       | 'overtime'
       | 'totalVacation'
       | 'plannedVacation'
-      | 'sickDays'
+      | 'sickDays',
+    includeManualAdjustment = false
   ) {
     if (!data) return 0;
-    if (key === 'overtime' || key === 'totalHours') {
+    if (
+      includeManualAdjustment &&
+      (key === 'totalHours' || key === 'overtime')
+    ) {
       return (
         data.monthlyData.reduce((sum, m) => sum + m[key], 0) + manualAdjustment
       );
@@ -339,7 +343,7 @@ export default function TimeAccountUserPage() {
                           : '-'}
                       </Table.Td>
                       <Table.Td ta="right" fw={700}>
-                        {fmt(getTotalValue(row.key))}
+                        {fmt(getTotalValue(row.key, true))}
                       </Table.Td>
                     </Table.Tr>
                   ))}
