@@ -211,10 +211,13 @@ function MonthClosingGridPrint({
           );
 
           return (
-            <div key={dayNum} className="flex border-b-2 border-slate-400">
+            <div
+              key={dayNum}
+              className="flex border-b-2 border-slate-400 even:bg-gray-100"
+            >
               {/* Day label */}
               <div
-                className="bg-white border-r border-slate-300 flex flex-col items-center justify-center"
+                className="even:bg-gray-100 border-r border-slate-300 flex flex-col items-center justify-center"
                 style={{ width: PRINT_DAY_LABEL_WIDTH, height: rowHeight }}
               >
                 <div className="text-sm font-medium">{dayNum}</div>

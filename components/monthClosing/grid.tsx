@@ -101,10 +101,13 @@ export default function MonthClosingGrid({
           );
 
           return (
-            <div key={dayNum} className="flex border-b-2 border-slate-400">
+            <div
+              key={dayNum}
+              className="flex border-b-2 border-slate-400 even:bg-gray-100"
+            >
               {/* Sticky Day label */}
               <div
-                className="sticky left-0 z-10 bg-white border-r border-slate-200 flex flex-col items-center justify-center"
+                className="sticky left-0 z-10 even:bg-gray-100 border-r border-slate-200 flex flex-col items-center justify-center"
                 style={{ width: DAY_LABEL_WIDTH, height: rowHeight }}
               >
                 <div className="text-sm font-medium">{dayNum}</div>
