@@ -129,8 +129,8 @@ function dayLabel(dt: Date) {
 }
 
 const PRINT_DAY_LABEL_WIDTH = 50;
-const PRINT_HEADER_HEIGHT = 40;
-const PRINT_LANE_HEIGHT = 60; // <- anpassen (mehr = höhere Zeilen)
+const PRINT_HEADER_HEIGHT = 30;
+const PRINT_LANE_HEIGHT = 50; // <- anpassen (mehr = höhere Zeilen)
 
 function HourHeaderPrint() {
   return (
@@ -211,10 +211,10 @@ function MonthClosingGridPrint({
           );
 
           return (
-            <div key={dayNum} className="flex border-b border-slate-100">
+            <div key={dayNum} className="flex border-b-2 border-slate-400">
               {/* Day label */}
               <div
-                className="bg-white border-r border-slate-200 flex flex-col items-center justify-center"
+                className="bg-white border-r border-slate-300 flex flex-col items-center justify-center"
                 style={{ width: PRINT_DAY_LABEL_WIDTH, height: rowHeight }}
               >
                 <div className="text-sm font-medium">{dayNum}</div>
@@ -228,7 +228,7 @@ function MonthClosingGridPrint({
                   {Array.from({ length: 24 }).map((_, h) => (
                     <div
                       key={h}
-                      className="absolute top-0 bottom-0 border-l border-slate-100"
+                      className="absolute top-0 bottom-0 border-l border-slate-300"
                       style={{ left: `${(h / 24) * 100}%` }}
                     />
                   ))}

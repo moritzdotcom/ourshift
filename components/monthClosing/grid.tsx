@@ -20,7 +20,7 @@ function HourHeader({
       {Array.from({ length: 24 }).map((_, h) => (
         <div
           key={h}
-          className="text-stone-400 text-xs border-l border-slate-200 first:border-l-0"
+          className="text-stone-400 text-xs border-l border-slate-300 first:border-l-0"
           style={{ width: hourWidth, paddingLeft: 6 }}
         >
           {h.toString().padStart(2, '0')}
@@ -42,11 +42,11 @@ export default function MonthClosingGrid({
   shifts: MonthClosingShift[];
   onUpdate: (part: MonthClosingShift, del?: boolean) => void;
 }) {
-  const HEADER_HEIGHT = 50;
-  const DAY_LABEL_WIDTH = 70;
+  const HEADER_HEIGHT = 30;
+  const DAY_LABEL_WIDTH = 50;
 
   // columnWidth wirkt sich auf Lane-Höhe aus:
-  const LANE_HEIGHT = 60;
+  const LANE_HEIGHT = 50;
 
   const days = useMemo(() => {
     const arr: Date[] = [];
@@ -81,7 +81,7 @@ export default function MonthClosingGrid({
       className="w-full h-full bg-white rounded border border-slate-200 overflow-x-hidden overflow-y-auto"
     >
       {/* Sticky Top Header */}
-      <div className="sticky top-0 z-20 bg-white border-b border-slate-200 flex">
+      <div className="sticky top-0 z-20 bg-white border-b border-slate-300 flex">
         <div style={{ width: DAY_LABEL_WIDTH, height: HEADER_HEIGHT }} />
         <div className="flex-1" style={{ height: HEADER_HEIGHT }}>
           <div className="pt-2">
@@ -101,7 +101,7 @@ export default function MonthClosingGrid({
           );
 
           return (
-            <div key={dayNum} className="flex border-b border-slate-100">
+            <div key={dayNum} className="flex border-b-2 border-slate-400">
               {/* Sticky Day label */}
               <div
                 className="sticky left-0 z-10 bg-white border-r border-slate-200 flex flex-col items-center justify-center"
@@ -118,7 +118,7 @@ export default function MonthClosingGrid({
                   {Array.from({ length: 24 }).map((_, h) => (
                     <div
                       key={h}
-                      className="absolute top-0 bottom-0 border-l border-slate-100"
+                      className="absolute top-0 bottom-0 border-l border-slate-300"
                       style={{ left: h * hourWidth }}
                     />
                   ))}
