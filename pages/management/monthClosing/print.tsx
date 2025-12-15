@@ -9,13 +9,10 @@ import { useViewportSize } from '@mantine/hooks';
 import { MonthClosingShift } from '.';
 import Link from 'next/link';
 import { IconChevronLeft } from '@tabler/icons-react';
-import { buildMonthLayout } from '@/lib/monthClosing';
+import { buildMonthLayoutHorizontal } from '@/lib/monthClosing';
 import { timeToHuman } from '@/lib/dates';
 import { ShiftPart } from '@/lib/monthClosing';
-import MonthClosingTimeColumn from '@/components/monthClosing/timeColumn';
-
-const HEADER_HEIGHT = 50;
-const HOUR_HEIGHT = 30;
+import { useElementSize } from '@/hooks/useElementSize';
 
 export default function MonthClosingPagePrint() {
   // Monat wählen
@@ -104,7 +101,7 @@ export default function MonthClosingPagePrint() {
 
       <style jsx global>{`
         @page {
-          size: A4 landscape;
+          size: A4 portrait;
           margin: 12mm;
         }
         @media print {
@@ -131,6 +128,28 @@ function dayLabel(dt: Date) {
   return dt.toLocaleDateString('de-DE', { weekday: 'short' });
 }
 
+const PRINT_DAY_LABEL_WIDTH = 50;
+const PRINT_HEADER_HEIGHT = 40;
+const PRINT_LANE_HEIGHT = 60; // <- anpassen (mehr = höhere Zeilen)
+
+function HourHeaderPrint() {
+  return (
+    <div
+      className="grid w-full"
+      style={{ gridTemplateColumns: 'repeat(24, minmax(0, 1fr))' }}
+    >
+      {Array.from({ length: 24 }).map((_, h) => (
+        <div
+          key={h}
+          className="text-stone-600 text-xs border-l border-slate-200 first:border-l-0 pl-1"
+        >
+          {h.toString().padStart(2, '0')}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function MonthClosingGridPrint({
   year,
   month,
@@ -148,102 +167,84 @@ function MonthClosingGridPrint({
     return arr;
   }, [year, month]);
 
-  // Layout-Daten vorbereiten
-  const partsByDay = useMemo(() => {
-    return buildMonthLayout(shifts, year, month, HEADER_HEIGHT, HOUR_HEIGHT);
-  }, [shifts, year, month]);
+  const { ref, width } = useElementSize<HTMLDivElement>();
 
-  return (
-    <>
-      <div className="flex items-start gap-2 break-after-page">
-        {/* linke Zeitspalte */}
-        <MonthClosingTimeColumn
-          marginTop={HEADER_HEIGHT}
-          itemHeight={HOUR_HEIGHT}
-        />
+  const timelineWidth = Math.max(1, width - PRINT_DAY_LABEL_WIDTH);
+  const hourWidth = timelineWidth / 24;
 
-        {/* Tages-Spalten */}
-        <MonthClosingGridRowPrint
-          days={days.slice(0, 15)}
-          partsByDay={partsByDay}
-        />
-      </div>
-      <div className="flex items-start gap-2">
-        {/* Tages-Spalten */}
-        <MonthClosingGridRowPrint
-          days={days.slice(15)}
-          partsByDay={partsByDay}
-        />
-        {/* rechte Zeitspalte */}
-        <MonthClosingTimeColumn
-          marginTop={HEADER_HEIGHT}
-          itemHeight={HOUR_HEIGHT}
-        />
-      </div>
-    </>
-  );
-}
-
-function MonthClosingGridRowPrint({
-  days,
-  partsByDay,
-}: {
-  days: Date[];
-  partsByDay: Record<number, ShiftPart[]>;
-}) {
-  const { width: vpWidth } = useViewportSize();
+  // buildMonthLayout muss die neue Signatur haben
+  const { perDay, dayHeights } = useMemo(() => {
+    return buildMonthLayoutHorizontal(
+      shifts,
+      year,
+      month,
+      hourWidth,
+      PRINT_LANE_HEIGHT
+    );
+  }, [shifts, year, month, hourWidth]);
 
   return (
     <div
-      className="grid bg-white rounded"
-      style={{
-        gridTemplateColumns: `repeat(${days.length}, ${Math.floor(
-          (vpWidth - 60) / days.length
-        )}px)`,
-        height: 24 * HOUR_HEIGHT + HEADER_HEIGHT,
-        position: 'relative',
-      }}
+      ref={ref}
+      className="w-full bg-white rounded border border-slate-200 overflow-hidden"
     >
-      {days.map((d) => {
-        const dayNum = d.getDate();
-        const parts = partsByDay[dayNum] || [];
-        return (
-          <div
-            key={dayNum}
-            className="relative border-r border-slate-200 last:border-r-0"
-          >
-            {/* Header der Spalte */}
-            <div
-              className="flex flex-col items-center justify-center w-full p-1 absolute border-b border-slate-200 bg-white z-10"
-              style={{ height: HEADER_HEIGHT, top: 0, left: 0, right: 0 }}
-            >
-              <div className="text-sm font-medium">{dayNum}</div>
-              <div className="text-xs text-stone-700">{dayLabel(d)}</div>
-            </div>
-
-            {/* Stundenlinien */}
-            <div className="absolute inset-0" style={{ top: HEADER_HEIGHT }}>
-              {Array.from({ length: 24 }).map((_, h) => (
-                <div
-                  key={h}
-                  className="border-b border-slate-100"
-                  style={{ height: HOUR_HEIGHT }}
-                />
-              ))}
-            </div>
-
-            {/* Events */}
-            <div
-              className="absolute inset-0"
-              style={{ top: 0, left: 0, right: 0 }}
-            >
-              {parts.map((p) => (
-                <MonthClosingShiftPartPrint key={p.id} part={p} />
-              ))}
-            </div>
+      {/* Sticky header (im Print nicht zwingend sticky, aber ok) */}
+      <div className="bg-white border-b border-slate-200 flex">
+        <div
+          style={{ width: PRINT_DAY_LABEL_WIDTH, height: PRINT_HEADER_HEIGHT }}
+        />
+        <div className="flex-1" style={{ height: PRINT_HEADER_HEIGHT }}>
+          <div className="pt-2">
+            <HourHeaderPrint />
           </div>
-        );
-      })}
+        </div>
+      </div>
+
+      {/* Rows */}
+      <div>
+        {days.map((d) => {
+          const dayNum = d.getDate();
+          const parts = perDay[dayNum] || [];
+          const rowHeight = Math.max(
+            PRINT_LANE_HEIGHT,
+            dayHeights[dayNum] ?? PRINT_LANE_HEIGHT
+          );
+
+          return (
+            <div key={dayNum} className="flex border-b border-slate-100">
+              {/* Day label */}
+              <div
+                className="bg-white border-r border-slate-200 flex flex-col items-center justify-center"
+                style={{ width: PRINT_DAY_LABEL_WIDTH, height: rowHeight }}
+              >
+                <div className="text-sm font-medium">{dayNum}</div>
+                <div className="text-xs text-stone-800">{dayLabel(d)}</div>
+              </div>
+
+              {/* Timeline */}
+              <div className="relative flex-1" style={{ height: rowHeight }}>
+                {/* hour lines */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {Array.from({ length: 24 }).map((_, h) => (
+                    <div
+                      key={h}
+                      className="absolute top-0 bottom-0 border-l border-slate-100"
+                      style={{ left: `${(h / 24) * 100}%` }}
+                    />
+                  ))}
+                </div>
+
+                {/* events */}
+                <div className="absolute inset-0">
+                  {parts.map((p) => (
+                    <MonthClosingShiftPartPrint key={p.id} part={p} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -268,7 +269,7 @@ function MonthClosingShiftPartPrint({ part }: { part: ShiftPart }) {
 
   return (
     <div
-      className={`absolute rounded-md shadow-sm border overflow-hidden ${color}`}
+      className={`absolute rounded-md border overflow-hidden ${color}`}
       style={{
         top: part.topPx,
         height: part.heightPx,
@@ -278,17 +279,14 @@ function MonthClosingShiftPartPrint({ part }: { part: ShiftPart }) {
       }}
       title={`${code} ${timeToHuman(part.start)}-${timeToHuman(part.end)}`}
     >
-      <div className="px-1.5 text-[11px] font-semibold truncate">
-        {part.originalShift.user.firstName}
-      </div>
-      <div className="px-1.5 text-[11px] font-semibold truncate">{code}</div>
-      <div className="px-1.5 text-[10px] truncate">
-        {timeToHuman(part.start)} - {timeToHuman(part.end)}
-      </div>
-      <div className="px-1.5 text-[10px] truncate">
+      <div className="px-1.5 text-sm font-semibold truncate">
+        {part.originalShift.user.firstName} · {code} ·{' '}
         {Math.round((part.end.getTime() - part.start.getTime()) / 60_000 / 6) /
           10}{' '}
         Std.
+      </div>
+      <div className="px-1.5 text-sm truncate">
+        {timeToHuman(part.start)} - {timeToHuman(part.end)}
       </div>
     </div>
   );

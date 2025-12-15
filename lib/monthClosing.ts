@@ -19,6 +19,8 @@ export type ShiftPart = {
   heightPx: number;
   leftPct: number; // 0..100
   widthPct: number; // 0..100
+  leftPx?: number; // x-Position in px (Uhrzeit)
+  widthPx?: number; // Breite in px (Dauer)
   // für Aktionen
   originalShift: MonthClosingShift;
 };
@@ -135,38 +137,46 @@ function wallSpanMinutes(start: Date, end: Date) {
   return Math.max(1, b - a);
 }
 
-function layoutDay(
+function layoutDayHorizontal(
   parts: ShiftPart[],
-  headerHeight: number,
-  hourHeight: number
+  hourWidth: number,
+  laneHeight: number
 ) {
   const groups = buildOverlapGroups(parts);
   for (const g of groups) assignColumnsForGroup(g);
 
-  const minuteHeight = hourHeight / 60;
+  const minuteWidth = hourWidth / 60;
+
+  let maxColsForDay = 1;
 
   for (const p of parts) {
-    // 1) Reale Dauer (für Logik/Tooltips/Abrechnung)
+    // reale Dauer (für Tooltip/Logik)
     const durMin = Math.max(
       1,
       Math.round((p.end.getTime() - p.start.getTime()) / 60000)
     );
     p.durationMin = durMin;
 
-    // 2) Visuelle Position/Höhe auf Basis der Wanduhr
-    const topMinWall = wallMinutes(p.start);
+    // visuelle Breite nach Wanduhr
+    const startMinWall = wallMinutes(p.start);
     const durMinWall = wallSpanMinutes(p.start, p.end);
 
-    p.topPx = headerHeight + topMinWall * minuteHeight;
-    p.heightPx = Math.max(6, durMinWall * minuteHeight);
+    // X: Zeit
+    p.leftPx = startMinWall * minuteWidth;
+    p.widthPx = Math.max(6, durMinWall * minuteWidth);
 
-    // Spaltenbreite/left wie gehabt
+    p.leftPct = (startMinWall / 1440) * 100;
+    p.widthPct = (durMinWall / 1440) * 100;
+
+    // Y: Lane (Overlap-Spalte wird zur Lane)
     const total = Math.max(1, p.cols);
-    p.leftPct = (p.col / total) * 100;
-    p.widthPct = (1 / total) * 100;
+    maxColsForDay = Math.max(maxColsForDay, total);
+
+    p.topPx = p.col * laneHeight;
+    p.heightPx = Math.max(18, laneHeight - 6);
   }
 
-  return parts;
+  return { parts, dayHeight: maxColsForDay * laneHeight };
 }
 
 function clampToDay(
@@ -236,22 +246,24 @@ function splitShiftIntoDays(shift: MonthClosingShift, y: number, m0: number) {
   return parts;
 }
 
-export function buildMonthLayout(
+export function buildMonthLayoutHorizontal(
   shifts: MonthClosingShift[],
   year: number,
   month0: number,
-  headerHeight: number,
-  hourHeight: number
+  hourWidth: number,
+  laneHeight: number
 ) {
   const lastDay = new Date(year, month0 + 1, 0).getDate();
 
-  // Split in Parts
   const perDay: Record<number, ShiftPart[]> = {};
+  const dayHeights: Record<number, number> = {};
+
   for (let d = 1; d <= lastDay; d++) perDay[d] = [];
 
   for (const s of shifts) {
     const parts = splitShiftIntoDays(s, year, month0);
     const isStamped = Boolean(s.clockIn && s.clockOut);
+
     for (const part of parts) {
       const sp: ShiftPart = {
         id: s.id + ':' + part.day,
@@ -275,10 +287,11 @@ export function buildMonthLayout(
     }
   }
 
-  // Overlap & Positions pro Tag
   for (let d = 1; d <= lastDay; d++) {
-    perDay[d] = layoutDay(perDay[d], headerHeight, hourHeight);
+    const res = layoutDayHorizontal(perDay[d], hourWidth, laneHeight);
+    perDay[d] = res.parts;
+    dayHeights[d] = res.dayHeight;
   }
 
-  return perDay; // { [day]: ShiftPart[] }
+  return { perDay, dayHeights };
 }

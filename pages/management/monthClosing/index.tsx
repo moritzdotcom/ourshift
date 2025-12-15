@@ -40,8 +40,6 @@ export default function MonthClosingPage() {
 
   const [shifts, setShifts] = useState<MonthClosingShift[]>([]);
 
-  const [columnWidth, setColumnWidth] = useState<number>(120); // 0-basiert
-
   // Daten
   const [loading, setLoading] = useState(true);
 
@@ -91,8 +89,6 @@ export default function MonthClosingPage() {
           month={month}
           setYear={setYear}
           setMonth={setMonth}
-          columnWidth={columnWidth}
-          setColumnWidth={setColumnWidth}
         />
         {loading ? (
           <Center>
@@ -104,7 +100,6 @@ export default function MonthClosingPage() {
             month={month}
             shifts={shifts}
             onUpdate={handleUpdate}
-            columnWidth={columnWidth}
           />
         )}
       </div>
