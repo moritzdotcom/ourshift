@@ -325,7 +325,7 @@ function addEmployeeBlock(
     ws.getCell(r, 2).value = centsToEuro(row.baseHourlyCents);
     euroFmt(ws.getCell(r, 2));
     ws.getCell(r, 3).value = minutesToRoundedHours(supp.minutes);
-    ws.getCell(r, 3).numFmt = '#,##';
+    ws.getCell(r, 3).numFmt = '0.0';
     ws.getCell(r, 4).value = supp.percent / 100;
     ws.getCell(r, 4).numFmt = '0%';
     ws.getCell(r, 5).value = centsToEuro(supp.amountCents);
