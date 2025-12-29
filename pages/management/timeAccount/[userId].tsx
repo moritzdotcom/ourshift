@@ -58,7 +58,7 @@ export default function TimeAccountUserPage() {
       const { data } = await axios.get<ApiGetSimpleUsersResponse>(
         '/api/users?simple=true'
       );
-      setUsers(data);
+      setUsers(data.filter((u) => u.isActive));
     }
     fetchUsers();
   }, []);
