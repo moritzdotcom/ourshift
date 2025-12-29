@@ -22,6 +22,7 @@ import axios from 'axios';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ApiGetCurrentShiftResponse } from './api/shifts/currentShift';
 import { shiftCodeColor } from '@/lib/shiftCode';
+import Link from 'next/link';
 
 const fetcher = (url: string) =>
   axios.get<ApiGetCurrentShiftResponse>(url).then((r) => r.data);
@@ -172,6 +173,9 @@ export default function CurrentShiftPage() {
                 color="var(--mantine-color-dimmed)"
               />
               <Text c="dimmed">Keine laufende Schicht</Text>
+              <Link href="/">
+                <Button variant="subtle">Zur Startseite</Button>
+              </Link>
               {next && (
                 <Stack gap={4} align="center">
                   <div
