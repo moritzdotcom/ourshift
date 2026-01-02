@@ -1,3 +1,5 @@
+import { isHoliday } from './holiday';
+
 export type PayRulePreset = {
   id: string;
   name: string;
@@ -61,3 +63,30 @@ export const PAY_RULE_PRESETS: Array<PayRulePreset> = [
     percent: 50,
   },
 ];
+
+export function ruleActiveOnDay(
+  rule: {
+    holidayOnly: boolean;
+    excludeHolidays: boolean;
+    daysOfWeek: number[];
+    validFrom: Date | string;
+    validUntil: Date | string | null;
+  },
+  day: string,
+  holidays: { date: Date | string }[]
+) {
+  const d = new Date(day + 'T00:00:00');
+  const isHol = isHoliday(day, holidays);
+  if (rule.holidayOnly && !isHol) return false;
+  if (rule.excludeHolidays && isHol) return false;
+  if (rule.daysOfWeek?.length) {
+    const dow = d.getDay(); // 0..6
+    if (!rule.daysOfWeek.includes(dow)) return false;
+  }
+  const from = new Date(rule.validFrom).getTime();
+  const until = rule.validUntil
+    ? new Date(rule.validUntil).getTime()
+    : Number.MAX_SAFE_INTEGER;
+  const t = d.getTime();
+  return t >= from && t <= until;
+}

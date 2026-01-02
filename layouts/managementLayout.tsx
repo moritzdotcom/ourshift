@@ -21,6 +21,7 @@ import {
   IconDoorExit,
   IconCalendarCheck,
   IconClock2,
+  IconFileTime,
 } from '@tabler/icons-react';
 import { Fragment, useState } from 'react';
 import { useRouter } from 'next/router';
@@ -65,6 +66,12 @@ export default function ManagementLayout({
           label: 'Zeitarbeitskonto',
           icon: IconClock2,
           href: '/management/timeAccount',
+          role: 'MANAGER',
+        },
+        {
+          label: 'Stundenzettel',
+          icon: IconFileTime,
+          href: '/management/timeSheets',
           role: 'MANAGER',
         },
       ],

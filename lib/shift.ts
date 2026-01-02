@@ -1,4 +1,5 @@
 import { Prisma } from '@/generated/prisma';
+import { dayBoundsUtc, toBerlin } from './time';
 
 function parseISO(input: unknown): Date | null {
   if (typeof input !== 'string' || !input) return null;
@@ -49,4 +50,23 @@ export function shiftIsActive(
   const start = new Date(new Date(shift.start).getTime() - (gracePeriod || 0));
   const end = new Date(new Date(shift.end).getTime() + (gracePeriod || 0));
   return now > start && now < end;
+}
+
+export function splitShiftByDay(startUtc: Date, endUtc: Date) {
+  const parts: { day: string; segStart: Date; segEnd: Date }[] = [];
+  // in Berlin "laufen", aber Segmente als UTC-JS-Dates zurückgeben
+  let curWall = toBerlin(startUtc);
+  const endWall = toBerlin(endUtc);
+
+  while (curWall < endWall) {
+    const dayISO = curWall.toISODate()!;
+    const { startUtc: dayStartUtc, endUtc: dayEndUtc } = dayBoundsUtc(dayISO);
+    const segStart = new Date(
+      Math.max(startUtc.getTime(), dayStartUtc.getTime())
+    );
+    const segEnd = new Date(Math.min(endUtc.getTime(), dayEndUtc.getTime()));
+    parts.push({ day: dayISO, segStart, segEnd });
+    curWall = curWall.plus({ days: 1 }).startOf('day');
+  }
+  return parts;
 }

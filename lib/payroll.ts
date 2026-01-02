@@ -1,91 +1,10 @@
-import { pickContractForDate } from './digitalContract';
+import { hourlyFromContract, pickContractForDate } from './digitalContract';
 import { KpiGetHolidays, KpiGetShifts, KpiGetUsers } from './kpiCache';
-import { Decimal } from '@prisma/client/runtime/library';
 import ExcelJS from 'exceljs';
-import {
-  dayBoundsUtc,
-  overlapMinutesUtc,
-  toBerlin,
-  windowsForDayUtc,
-} from './time';
+import { overlapMinutesUtc, windowsForDayUtc } from './time';
 import { minutesToRoundedHours } from './dates';
-
-function dayISO(d: Date | string) {
-  const x = new Date(d);
-  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(
-    2,
-    '0'
-  )}-${String(x.getDate()).padStart(2, '0')}`;
-}
-function isHoliday(dateISO: string, holidays: { date: Date | string }[]) {
-  return holidays.some((h) => dayISO(h.date) === dateISO);
-}
-
-function hourlyFromContract(
-  c: {
-    hourlyRateCents: number | null;
-    salaryMonthlyCents: number | null;
-    weeklyHours: Decimal | null;
-  } | null
-): number | null {
-  if (!c) return null;
-  if (c.hourlyRateCents != null) return c.hourlyRateCents;
-  if (
-    c.salaryMonthlyCents != null &&
-    c.weeklyHours != null &&
-    Number(c.weeklyHours) > 0
-  ) {
-    const hoursPerMonth = Number(c.weeklyHours) * (52 / 12); // ~4.333 Wochen
-    return Math.round(c.salaryMonthlyCents / hoursPerMonth);
-  }
-  return null;
-}
-
-function splitShiftByDay(startUtc: Date, endUtc: Date) {
-  const parts: { day: string; segStart: Date; segEnd: Date }[] = [];
-  // in Berlin "laufen", aber Segmente als UTC-JS-Dates zurückgeben
-  let curWall = toBerlin(startUtc);
-  const endWall = toBerlin(endUtc);
-
-  while (curWall < endWall) {
-    const dayISO = curWall.toISODate()!;
-    const { startUtc: dayStartUtc, endUtc: dayEndUtc } = dayBoundsUtc(dayISO);
-    const segStart = new Date(
-      Math.max(startUtc.getTime(), dayStartUtc.getTime())
-    );
-    const segEnd = new Date(Math.min(endUtc.getTime(), dayEndUtc.getTime()));
-    parts.push({ day: dayISO, segStart, segEnd });
-    curWall = curWall.plus({ days: 1 }).startOf('day');
-  }
-  return parts;
-}
-
-function ruleActiveOnDay(
-  rule: {
-    holidayOnly: boolean;
-    excludeHolidays: boolean;
-    daysOfWeek: number[];
-    validFrom: Date | string;
-    validUntil: Date | string | null;
-  },
-  day: string,
-  holidays: KpiGetHolidays
-) {
-  const d = new Date(day + 'T00:00:00');
-  const isHol = isHoliday(day, holidays);
-  if (rule.holidayOnly && !isHol) return false;
-  if (rule.excludeHolidays && isHol) return false;
-  if (rule.daysOfWeek?.length) {
-    const dow = d.getDay(); // 0..6
-    if (!rule.daysOfWeek.includes(dow)) return false;
-  }
-  const from = new Date(rule.validFrom).getTime();
-  const until = rule.validUntil
-    ? new Date(rule.validUntil).getTime()
-    : Number.MAX_SAFE_INTEGER;
-  const t = d.getTime();
-  return t >= from && t <= until;
-}
+import { splitShiftByDay } from './shift';
+import { ruleActiveOnDay } from './payRule';
 
 function calculateBonus(
   monthIndex: number,
