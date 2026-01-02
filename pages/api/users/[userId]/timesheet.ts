@@ -28,29 +28,21 @@ export type ApiGetUserTimesheetResponse = {
   plannedMonthlyHours: number;
 };
 
-function toDateOrThrow(v: unknown, name: string): Date {
-  if (typeof v !== 'string') throw new Error(`Missing query param: ${name}`);
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime()))
-    throw new Error(`Invalid date for ${name}: ${v}`);
-  return d;
-}
-
 async function handleGET(
   req: NextApiRequest,
   res: NextApiResponse,
   userId: string
 ) {
-  try {
-    const from = toDateOrThrow(req.query.from, 'from');
-    const to = toDateOrThrow(req.query.to, 'to');
-    if (from.getTime() > to.getTime())
-      return res.status(400).json({ error: '`from` must be <= `to`' });
+  const { year, month } = req.query;
+  if (typeof year !== 'string' || typeof month !== 'string') {
+    return res.status(400).json({ error: 'Invalid year or month' });
+  }
 
+  try {
     const { timeSheet, plannedMonthlyHours } = await getUserTimesheet(
       userId,
-      from,
-      to
+      Number(year),
+      Number(month)
     );
 
     return res.status(200).json({ timeSheet, plannedMonthlyHours });

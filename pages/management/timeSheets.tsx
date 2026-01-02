@@ -83,7 +83,7 @@ export default function TimeSheetsPage() {
         @media print {
           @page {
             size: A4 portrait;
-            margin: 14mm;
+            margin: 12mm 18mm;
           }
 
           /* Farben/Border sauber drucken */
@@ -339,23 +339,18 @@ function TimeSheetView({
   year: number;
   month: number;
 }) {
-  const fromParam = `${year}-${(month + 1).toString().padStart(2, '0')}-01`;
-  const toParam = `${year}-${(month + 1)
-    .toString()
-    .padStart(2, '0')}-${new Date(year, month + 1, 0).getDate()}`;
-
   const fetcher = () =>
     axios
       .get<ApiGetUserTimesheetResponse>(`/api/users/${user.id}/timesheet`, {
         params: {
-          from: fromParam,
-          to: toParam,
+          year,
+          month,
         },
       })
       .then((res) => res.data);
 
   const { data: timeSheetData, error } = useSWR(
-    `/api/users/${user.id}/timesheet?from=${fromParam}&to=${toParam}`,
+    `/api/users/${user.id}/timesheet?year=${year}&month=${month}`,
     fetcher
   );
 
@@ -389,9 +384,10 @@ function TimeSheetView({
         {/* Print Header */}
         <Group justify="space-between" mb="md">
           <Text fw={600}>Monatsbericht</Text>
-          <Text>Name: {user.firstName}</Text>
           <Text>
-            Monat:{' '}
+            {user.firstName} {user.lastName}
+          </Text>
+          <Text>
             {new Date(year, month, 1).toLocaleDateString('de-DE', {
               month: 'long',
               year: 'numeric',
@@ -402,8 +398,8 @@ function TimeSheetView({
         <table className="w-full border-collapse text-sm table-fixed">
           <thead>
             <tr>
-              <th className="border p-1 text-left">Datum</th>
-              <th className="border p-1 text-left">Tag</th>
+              <th className="border p-1 text-center">Datum</th>
+              <th className="border p-1 text-center">Tag</th>
               <th className="border p-1 text-left">Uhrzeit Beginn</th>
               <th className="border p-1 text-left">Uhrzeit Ende</th>
               <th className="border p-1 text-right">Stunden</th>
@@ -495,7 +491,10 @@ function TimeSheetTableBody({
                 {dayLabel}
               </td>
 
-              <td className="border p-1 capitalize" rowSpan={shiftCount}>
+              <td
+                className="border p-1 capitalize text-center"
+                rowSpan={shiftCount}
+              >
                 {weekday}
               </td>
 

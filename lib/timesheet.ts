@@ -1,11 +1,11 @@
+import { pickContractForDate } from './digitalContract';
 import prisma from '@/lib/prismadb';
 import { ruleActiveOnDay } from './payRule';
-import { toZonedTime, fromZonedTime, formatInTimeZone } from 'date-fns-tz';
-import { pickContractForDate } from './digitalContract';
+import { fromZonedTime, toZonedTime, formatInTimeZone } from 'date-fns-tz';
 
 export type TimeSheetShift = {
-  start: string; // ISO
-  end: string; // ISO
+  start: string; // ISO (UTC)
+  end: string; // ISO (UTC)
   hours: number; // decimal hours
 };
 
@@ -17,30 +17,52 @@ export type TimeSheetDay = {
 
 const TZ = 'Europe/Berlin';
 
-export function startOfDay(date: Date) {
-  const zoned = toZonedTime(date, TZ); // Date in Berlin-Zeit
-  zoned.setHours(0, 0, 0, 0); // 00:00 Berlin
-  return fromZonedTime(zoned, TZ); // zurück nach UTC
+function round2(n: number) {
+  return Math.round(n * 100) / 100;
 }
 
-export function endOfDay(date: Date) {
-  const zoned = toZonedTime(date, TZ);
-  zoned.setHours(23, 59, 59, 999);
-  return fromZonedTime(zoned, TZ);
+function centsToEuros2(cents: number) {
+  return round2(cents / 100);
 }
 
-export function addDays(date: Date, days: number) {
-  const zoned = toZonedTime(date, TZ);
-  zoned.setDate(zoned.getDate() + days); // +1 Kalendertag in Berlin
-  return fromZonedTime(zoned, TZ);
+function decimalToNumber(d: any): number {
+  if (d == null) return 0;
+  if (typeof d === 'number') return d;
+  if (typeof d === 'string') return Number(d);
+  if (typeof d === 'object' && typeof d.toNumber === 'function')
+    return d.toNumber();
+  return Number(d);
 }
 
-export function isoDayKey(date: Date) {
-  return formatInTimeZone(date, TZ, 'yyyy-MM-dd'); // Key aus Berlin-Sicht
+// --- TZ helpers (Berlin) ---
+function berlinStartOfDayUtc(dateUtc: Date) {
+  const z = toZonedTime(dateUtc, TZ);
+  z.setHours(0, 0, 0, 0);
+  return fromZonedTime(z, TZ);
 }
 
-function minutesToDate(dayStart: Date, minutes: number) {
-  return new Date(dayStart.getTime() + minutes * 60_000);
+function berlinAddDaysUtc(dateUtc: Date, days: number) {
+  const z = toZonedTime(dateUtc, TZ);
+  z.setDate(z.getDate() + days);
+  return fromZonedTime(z, TZ);
+}
+
+function berlinIsoDayKey(dateUtc: Date) {
+  return formatInTimeZone(dateUtc, TZ, 'yyyy-MM-dd');
+}
+
+function berlinDayNumber(dateUtc: Date) {
+  return Number(formatInTimeZone(dateUtc, TZ, 'd')); // 1..31
+}
+
+function berlinEndOfDayUtc(dayStartUtc: Date) {
+  const z = toZonedTime(dayStartUtc, TZ);
+  z.setHours(23, 59, 59, 999);
+  return fromZonedTime(z, TZ);
+}
+
+function minutesToDate(dayStartUtc: Date, minutes: number) {
+  return new Date(dayStartUtc.getTime() + minutes * 60_000);
 }
 
 function clamp(a: Date, lo: Date, hi: Date) {
@@ -51,24 +73,6 @@ function overlapMs(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) {
   const s = Math.max(aStart.getTime(), bStart.getTime());
   const e = Math.min(aEnd.getTime(), bEnd.getTime());
   return Math.max(0, e - s);
-}
-
-function round2(n: number) {
-  return Math.round(n * 100) / 100;
-}
-
-function centsToEuros2(cents: number) {
-  return round2(cents / 100);
-}
-
-function decimalToNumber(d: any): number {
-  // Prisma Decimal kann je nach Setup string/Decimal.js sein
-  if (d == null) return 0;
-  if (typeof d === 'number') return d;
-  if (typeof d === 'string') return Number(d);
-  if (typeof d === 'object' && typeof d.toNumber === 'function')
-    return d.toNumber();
-  return Number(d);
 }
 
 type PayRuleLite = {
@@ -84,13 +88,10 @@ type PayRuleLite = {
 
 function ruleIntervalsForDay(
   rule: PayRuleLite,
-  dayStart: Date
+  dayStartUtc: Date
 ): Array<[Date, Date]> {
-  // Liefert Intervalle innerhalb dieses Tages, in denen die Rule gilt.
-  // - null = ganztägig
-  // - over-midnight (end < start): zwei Intervalle am selben Tag (00:00..end) und (start..23:59:59.999)
-  const ds = dayStart;
-  const de = endOfDay(dayStart);
+  const ds = dayStartUtc;
+  const de = berlinEndOfDayUtc(dayStartUtc);
 
   if (rule.windowStartMin == null || rule.windowEndMin == null) {
     return [[ds, de]];
@@ -116,10 +117,9 @@ function findHourlyRateCentsForDate(
     validUntil: Date | null;
     hourlyRateCents: number | null;
   }>,
-  dayStart: Date
+  dayStartUtc: Date
 ) {
-  const t = dayStart.getTime();
-  // "aktiver" Vertrag: validFrom <= day && (validUntil null oder >= day)
+  const t = dayStartUtc.getTime();
   const active = contracts
     .filter(
       (c) =>
@@ -131,9 +131,34 @@ function findHourlyRateCentsForDate(
   return active?.hourlyRateCents ?? 0;
 }
 
-export async function getUserTimesheet(userId: string, from: Date, to: Date) {
-  const fromDay = startOfDay(from);
-  const toDay = startOfDay(to);
+/**
+ * year: z.B. 2025
+ * monthIndex: 0..11
+ */
+export async function getUserTimesheet(
+  userId: string,
+  year: number,
+  monthIndex: number
+) {
+  if (!Number.isInteger(year) || year < 1970 || year > 2100)
+    throw new Error('Invalid year');
+  if (!Number.isInteger(monthIndex) || monthIndex < 0 || monthIndex > 11)
+    throw new Error('Invalid month');
+
+  // Monatsrange in Berlin:
+  // start = 1. des Monats 00:00 Berlin (als UTC)
+  // endExclusive = 1. des Folgemonats 00:00 Berlin (als UTC)
+  const monthStartUtc = fromZonedTime(
+    new Date(year, monthIndex, 1, 0, 0, 0, 0),
+    TZ
+  );
+  const nextMonthStartUtc = fromZonedTime(
+    new Date(year, monthIndex + 1, 1, 0, 0, 0, 0),
+    TZ
+  );
+
+  // Anzahl Tage im Monat (kalenderlogisch)
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
 
   const [user, holidays] = await Promise.all([
     prisma.user.findUnique({
@@ -166,8 +191,8 @@ export async function getUserTimesheet(userId: string, from: Date, to: Date) {
     prisma.holiday.findMany({
       where: {
         date: {
-          gte: fromDay,
-          lt: addDays(toDay, 1),
+          gte: monthStartUtc,
+          lt: nextMonthStartUtc,
         },
       },
       select: { date: true },
@@ -176,77 +201,63 @@ export async function getUserTimesheet(userId: string, from: Date, to: Date) {
 
   if (!user) throw new Error('User not found');
 
-  // Shifts: alles was irgendwie den Range schneidet (wichtig bei Over-midnight)
+  // Shifts, die den Monat schneiden (DST-safe, weil UTC-Range)
   const shifts = await prisma.shift.findMany({
     where: {
       userId,
-      start: { lt: addDays(toDay, 1) },
-      end: { gt: fromDay },
-      // optional: nur "gearbeitete" mit clockIn/out? Ich nehme: wenn clockIn/out vorhanden -> die, sonst fallback start/end
+      start: { lt: nextMonthStartUtc },
+      end: { gt: monthStartUtc },
+      clockOut: { not: null },
     },
-    select: {
-      id: true,
-      start: true,
-      end: true,
-      clockIn: true,
-      clockOut: true,
-      shiftAbsence: { select: { reason: true } },
-    },
+    select: { id: true, start: true, end: true, clockIn: true, clockOut: true },
     orderBy: { start: 'asc' },
   });
 
-  // Output Tage initialisieren
+  // Output Tage initialisieren: 1..daysInMonth (kein Vormonat!)
   const days: Record<
     string,
     {
       day: number;
       shifts: TimeSheetShift[];
       supplementsCents: number;
-      dayStart: Date;
+      dayStartUtc: Date;
     }
   > = {};
-  for (
-    let d = new Date(fromDay);
-    d.getTime() <= toDay.getTime();
-    d = addDays(d, 1)
-  ) {
-    const key = isoDayKey(d);
-    days[key] = {
-      day: d.getDate(),
-      shifts: [],
-      supplementsCents: 0,
-      dayStart: new Date(d),
-    };
-  }
 
-  const contract = pickContractForDate(user.contracts, fromDay) ?? null;
-  const plannedMonthlyHours = Number(contract?.weeklyHours ?? 0) * (52 / 12);
+  // wir iterieren kalendarisch in Berlin
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dayStartUtc = fromZonedTime(
+      new Date(year, monthIndex, d, 0, 0, 0, 0),
+      TZ
+    );
+    const key = berlinIsoDayKey(dayStartUtc);
+    days[key] = { day: d, shifts: [], supplementsCents: 0, dayStartUtc };
+  }
 
   const payRules: PayRuleLite[] = user.payRules;
 
-  // Hilfsfunktion: Supplements für ein Segment innerhalb eines Tages berechnen
   function calcSupplementsCentsForSegment(
-    dayStartDate: Date,
+    dayStartUtc: Date,
     segStart: Date,
     segEnd: Date
   ) {
-    const dayKey = isoDayKey(dayStartDate);
+    const dayKey = berlinIsoDayKey(dayStartUtc);
     const hourlyRateCents = findHourlyRateCentsForDate(
       user!.contracts,
-      dayStartDate
+      dayStartUtc
     );
-
     if (!hourlyRateCents) return 0;
 
     let cents = 0;
 
     for (const rule of payRules) {
+      // Deine bestehende Logik:
       if (!ruleActiveOnDay(rule, dayKey, holidays)) continue;
 
-      const percent = decimalToNumber(rule.percent); // z.B. 25.00
+      const percent = decimalToNumber(rule.percent);
       if (!percent) continue;
 
-      const intervals = ruleIntervalsForDay(rule, dayStartDate);
+      const intervals = ruleIntervalsForDay(rule, dayStartUtc);
 
       let overlapTotalMs = 0;
       for (const [rStart, rEnd] of intervals) {
@@ -255,17 +266,14 @@ export async function getUserTimesheet(userId: string, from: Date, to: Date) {
       if (!overlapTotalMs) continue;
 
       const overlapHours = overlapTotalMs / 3_600_000;
-      // Zuschlag = hourlyRate * (percent/100) * overlapHours
       const add = hourlyRateCents * (percent / 100) * overlapHours;
-
-      // sauber runden auf Cent
       cents += Math.round(add);
     }
 
     return cents;
   }
 
-  // Shifts verarbeiten (splitten pro Tag)
+  // Shifts splitten: Tagesgrenze = Berlin-Mitternacht (in UTC dargestellt)
   for (const s of shifts) {
     const actualStart = s.clockIn ?? s.start;
     const actualEnd = s.clockOut ?? s.end;
@@ -273,17 +281,17 @@ export async function getUserTimesheet(userId: string, from: Date, to: Date) {
     if (!actualStart || !actualEnd) continue;
     if (actualEnd.getTime() <= actualStart.getTime()) continue;
 
-    // clamp auf Range
-    let cur = clamp(actualStart, fromDay, addDays(toDay, 1));
-    const hardEnd = clamp(actualEnd, fromDay, addDays(toDay, 1));
+    let cur = clamp(actualStart, monthStartUtc, nextMonthStartUtc);
+    const hardEnd = clamp(actualEnd, monthStartUtc, nextMonthStartUtc);
     if (hardEnd.getTime() <= cur.getTime()) continue;
 
     while (cur.getTime() < hardEnd.getTime()) {
-      const dStart = startOfDay(cur);
-      const dEnd = addDays(dStart, 1); // exklusives Tagesende
-      const segEnd = new Date(Math.min(hardEnd.getTime(), dEnd.getTime()));
+      const dStartUtc = berlinStartOfDayUtc(cur);
+      const dEndUtc = berlinAddDaysUtc(dStartUtc, 1); // nächste Berlin-Mitternacht (UTC)
+      const segEnd = new Date(Math.min(hardEnd.getTime(), dEndUtc.getTime()));
 
-      const dayKey = isoDayKey(dStart);
+      const dayKey = berlinIsoDayKey(dStartUtc);
+
       if (days[dayKey]) {
         const hours = (segEnd.getTime() - cur.getTime()) / 3_600_000;
 
@@ -293,9 +301,8 @@ export async function getUserTimesheet(userId: string, from: Date, to: Date) {
           hours: round2(hours),
         });
 
-        if (s.shiftAbsence?.reason === 'SICKNESS') continue;
         days[dayKey].supplementsCents += calcSupplementsCentsForSegment(
-          dStart,
+          dStartUtc,
           cur,
           segEnd
         );
@@ -305,14 +312,32 @@ export async function getUserTimesheet(userId: string, from: Date, to: Date) {
     }
   }
 
-  // Response sortieren in Tagesreihenfolge
-  const out: TimeSheetDay[] = Object.values(days)
-    .sort((a, b) => a.dayStart.getTime() - b.dayStart.getTime())
-    .map((d) => ({
-      day: d.day,
-      shifts: d.shifts,
-      supplements: centsToEuros2(d.supplementsCents),
-    }));
+  // Output sortieren: 1..daysInMonth (stabil)
+  const out: TimeSheetDay[] = Array.from(
+    { length: daysInMonth },
+    (_, i) => i + 1
+  ).map((d) => {
+    const dayStartUtc = fromZonedTime(
+      new Date(year, monthIndex, d, 0, 0, 0, 0),
+      TZ
+    );
+    const key = berlinIsoDayKey(dayStartUtc);
+    const entry = days[key] ?? {
+      day: d,
+      shifts: [],
+      supplementsCents: 0,
+      dayStartUtc,
+    };
+
+    return {
+      day: entry.day,
+      shifts: entry.shifts,
+      supplements: centsToEuros2(entry.supplementsCents),
+    };
+  });
+
+  const contract = pickContractForDate(user.contracts, monthStartUtc) ?? null;
+  const plannedMonthlyHours = Number(contract?.weeklyHours ?? 0) * (52 / 12);
 
   return { timeSheet: out, plannedMonthlyHours };
 }
