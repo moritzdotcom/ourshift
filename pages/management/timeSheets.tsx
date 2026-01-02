@@ -413,19 +413,17 @@ function TimeSheetView({
             month={month}
           />
 
-          <tfoot>
-            <tr>
-              <td className="border p-1 font-medium" colSpan={4}>
-                Gesamt
-              </td>
-              <td className="border p-1 font-medium text-right">
-                {fmtHours(totalHours)}
-              </td>
-              <td className="border p-1 font-medium text-right">
-                {fmtEuro(totalSupplements)}
-              </td>
-            </tr>
-          </tfoot>
+          <tr>
+            <td className="border p-1 font-medium" colSpan={4}>
+              Gesamt
+            </td>
+            <td className="border p-1 font-medium text-right">
+              {fmtHours(totalHours)}
+            </td>
+            <td className="border p-1 font-medium text-right">
+              {fmtEuro(totalSupplements)}
+            </td>
+          </tr>
         </table>
 
         <div className="flex flex-col gap-1 mt-6 max-w-xs ml-auto">

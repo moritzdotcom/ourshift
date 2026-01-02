@@ -2,6 +2,7 @@ import { pickContractForDate } from './digitalContract';
 import prisma from '@/lib/prismadb';
 import { ruleActiveOnDay } from './payRule';
 import { fromZonedTime, toZonedTime, formatInTimeZone } from 'date-fns-tz';
+import { addDays } from 'date-fns';
 
 export type TimeSheetShift = {
   start: string; // ISO (UTC)
@@ -336,7 +337,8 @@ export async function getUserTimesheet(
     };
   });
 
-  const contract = pickContractForDate(user.contracts, monthStartUtc) ?? null;
+  const contract =
+    pickContractForDate(user.contracts, addDays(monthStartUtc, 15)) ?? null;
   const plannedMonthlyHours = Number(contract?.weeklyHours ?? 0) * (52 / 12);
 
   return { timeSheet: out, plannedMonthlyHours };
