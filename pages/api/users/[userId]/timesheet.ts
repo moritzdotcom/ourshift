@@ -23,7 +23,10 @@ export default async function handle(
   }
 }
 
-export type ApiGetUserTimesheetResponse = TimeSheetDay[];
+export type ApiGetUserTimesheetResponse = {
+  timeSheet: TimeSheetDay[];
+  plannedMonthlyHours: number;
+};
 
 function toDateOrThrow(v: unknown, name: string): Date {
   if (typeof v !== 'string') throw new Error(`Missing query param: ${name}`);
@@ -44,9 +47,13 @@ async function handleGET(
     if (from.getTime() > to.getTime())
       return res.status(400).json({ error: '`from` must be <= `to`' });
 
-    const timesheet = await getUserTimesheet(userId, from, to);
+    const { timeSheet, plannedMonthlyHours } = await getUserTimesheet(
+      userId,
+      from,
+      to
+    );
 
-    return res.status(200).json(timesheet);
+    return res.status(200).json({ timeSheet, plannedMonthlyHours });
   } catch (e: any) {
     return res.status(400).json({ error: e?.message ?? 'Unknown error' });
   }

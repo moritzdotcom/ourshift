@@ -161,7 +161,7 @@ async function handleGET(
           1
       );
       const daysInFullMonth = monthEnd.getDate();
-      const weeksInMonth = (daysInMonth / daysInFullMonth) * 4.35;
+      const weeksInMonth = (daysInMonth / daysInFullMonth) * (52 / 12);
 
       monthlyVacationGranted +=
         ((contract.vacationDaysAnnual || 0) / 12) *

@@ -1,6 +1,7 @@
 import prisma from '@/lib/prismadb';
 import { ruleActiveOnDay } from './payRule';
 import { toZonedTime, fromZonedTime, formatInTimeZone } from 'date-fns-tz';
+import { pickContractForDate } from './digitalContract';
 
 export type TimeSheetShift = {
   start: string; // ISO
@@ -140,7 +141,12 @@ export async function getUserTimesheet(userId: string, from: Date, to: Date) {
       select: {
         id: true,
         contracts: {
-          select: { validFrom: true, validUntil: true, hourlyRateCents: true },
+          select: {
+            validFrom: true,
+            validUntil: true,
+            hourlyRateCents: true,
+            weeklyHours: true,
+          },
           orderBy: { validFrom: 'asc' },
         },
         payRules: {
@@ -184,6 +190,7 @@ export async function getUserTimesheet(userId: string, from: Date, to: Date) {
       end: true,
       clockIn: true,
       clockOut: true,
+      shiftAbsence: { select: { reason: true } },
     },
     orderBy: { start: 'asc' },
   });
@@ -211,6 +218,9 @@ export async function getUserTimesheet(userId: string, from: Date, to: Date) {
       dayStart: new Date(d),
     };
   }
+
+  const contract = pickContractForDate(user.contracts, fromDay) ?? null;
+  const plannedMonthlyHours = Number(contract?.weeklyHours ?? 0) * (52 / 12);
 
   const payRules: PayRuleLite[] = user.payRules;
 
@@ -283,6 +293,7 @@ export async function getUserTimesheet(userId: string, from: Date, to: Date) {
           hours: round2(hours),
         });
 
+        if (s.shiftAbsence?.reason === 'SICKNESS') continue;
         days[dayKey].supplementsCents += calcSupplementsCentsForSegment(
           dStart,
           cur,
@@ -303,5 +314,5 @@ export async function getUserTimesheet(userId: string, from: Date, to: Date) {
       supplements: centsToEuros2(d.supplementsCents),
     }));
 
-  return out;
+  return { timeSheet: out, plannedMonthlyHours };
 }

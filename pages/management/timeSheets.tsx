@@ -20,7 +20,7 @@ function fmtHours(hours?: number | null) {
   return new Intl.NumberFormat('de-DE', {
     style: 'unit',
     unit: 'hour',
-  }).format(hours);
+  }).format(Number(hours.toFixed(1)));
 }
 
 export default function TimeSheetsPage() {
@@ -359,19 +359,14 @@ function TimeSheetView({
     fetcher
   );
 
-  const monthLabel = new Date(year, month, 1).toLocaleDateString('de-DE', {
-    month: 'long',
-    year: 'numeric',
-  });
-
   if (error) return <div>Fehler beim Laden des Stundenzettels.</div>;
   if (!timeSheetData) return <div>Lade Stundenzettel…</div>;
 
-  const totalHours = timeSheetData
+  const totalHours = timeSheetData.timeSheet
     .flatMap((d) => d.shifts)
     .reduce((sum, s) => sum + s.hours, 0);
 
-  const totalSupplements = timeSheetData.reduce(
+  const totalSupplements = timeSheetData.timeSheet.reduce(
     (sum, d) => sum + d.supplements,
     0
   );
@@ -407,31 +402,52 @@ function TimeSheetView({
         <table className="w-full border-collapse text-sm table-fixed">
           <thead>
             <tr>
-              <th className="border p-0.5 text-left">Datum</th>
-              <th className="border p-0.5 text-left">Tag</th>
-              <th className="border p-0.5 text-left">Uhrzeit Beginn</th>
-              <th className="border p-0.5 text-left">Uhrzeit Ende</th>
-              <th className="border p-0.5 text-right">Stunden</th>
-              <th className="border p-0.5 text-right">Zuschläge</th>
+              <th className="border p-1 text-left">Datum</th>
+              <th className="border p-1 text-left">Tag</th>
+              <th className="border p-1 text-left">Uhrzeit Beginn</th>
+              <th className="border p-1 text-left">Uhrzeit Ende</th>
+              <th className="border p-1 text-right">Stunden</th>
+              <th className="border p-1 text-right">Zuschläge</th>
             </tr>
           </thead>
 
-          <TimeSheetTableBody data={timeSheetData} year={year} month={month} />
+          <TimeSheetTableBody
+            data={timeSheetData.timeSheet}
+            year={year}
+            month={month}
+          />
 
           <tfoot>
             <tr>
-              <td className="border p-0.5 font-medium" colSpan={4}>
+              <td className="border p-1 font-medium" colSpan={4}>
                 Gesamt
               </td>
-              <td className="border p-0.5 font-medium text-right">
+              <td className="border p-1 font-medium text-right">
                 {fmtHours(totalHours)}
               </td>
-              <td className="border p-0.5 font-medium text-right">
+              <td className="border p-1 font-medium text-right">
                 {fmtEuro(totalSupplements)}
               </td>
             </tr>
           </tfoot>
         </table>
+
+        <div className="flex flex-col gap-1 mt-6 max-w-xs ml-auto">
+          <div className="flex justify-between">
+            <div>Soll Stunden</div>
+            <div>{fmtHours(timeSheetData.plannedMonthlyHours)}</div>
+          </div>
+          <div className="flex justify-between">
+            <div>Ist Stunden</div>
+            <div>{fmtHours(totalHours)}</div>
+          </div>
+          <div className="flex justify-between border-t border-slate-600 pt-1 font-medium">
+            <div>Überstunden</div>
+            <div>
+              {fmtHours(totalHours - timeSheetData.plannedMonthlyHours)}
+            </div>
+          </div>
+        </div>
 
         {/* Signatures (optional, aber meist sinnvoll) */}
         <div className="signature-grid">
@@ -454,7 +470,7 @@ function TimeSheetTableBody({
   year,
   month, // 0–11
 }: {
-  data: ApiGetUserTimesheetResponse;
+  data: ApiGetUserTimesheetResponse['timeSheet'];
   year: number;
   month: number;
 }) {
@@ -475,42 +491,42 @@ function TimeSheetTableBody({
         return (
           <Fragment key={`day-${day.day}`}>
             <tr>
-              <td className="border p-0.5 text-center" rowSpan={shiftCount}>
+              <td className="border p-1 text-center" rowSpan={shiftCount}>
                 {dayLabel}
               </td>
 
-              <td className="border p-0.5 capitalize" rowSpan={shiftCount}>
+              <td className="border p-1 capitalize" rowSpan={shiftCount}>
                 {weekday}
               </td>
 
               {day.shifts.length > 0 ? (
                 <>
-                  <td className="border p-0.5">
+                  <td className="border p-1">
                     {new Date(day.shifts[0].start).toLocaleTimeString('de-DE', {
                       hour: '2-digit',
                       minute: '2-digit',
                     })}
                   </td>
-                  <td className="border p-0.5">
+                  <td className="border p-1">
                     {new Date(day.shifts[0].end).toLocaleTimeString('de-DE', {
                       hour: '2-digit',
                       minute: '2-digit',
                     })}
                   </td>
-                  <td className="border p-0.5 text-right">
+                  <td className="border p-1 text-right">
                     {fmtHours(day.shifts[0].hours)}
                   </td>
                 </>
               ) : (
                 <>
-                  <td className="border p-0.5"></td>
-                  <td className="border p-0.5"></td>
-                  <td className="border p-0.5"></td>
+                  <td className="border p-1"></td>
+                  <td className="border p-1"></td>
+                  <td className="border p-1"></td>
                 </>
               )}
 
               <td
-                className="border p-0.5 text-right font-medium"
+                className="border p-1 text-right font-medium"
                 rowSpan={shiftCount}
               >
                 {day.supplements > 0 ? fmtEuro(day.supplements) : ''}
@@ -519,19 +535,19 @@ function TimeSheetTableBody({
 
             {day.shifts.slice(1).map((shift, i) => (
               <tr key={`day-${day.day}-shift-${i}`}>
-                <td className="border p-0.5">
+                <td className="border p-1">
                   {new Date(shift.start).toLocaleTimeString('de-DE', {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
                 </td>
-                <td className="border p-0.5">
+                <td className="border p-1">
                   {new Date(shift.end).toLocaleTimeString('de-DE', {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
                 </td>
-                <td className="border p-0.5 text-right">
+                <td className="border p-1 text-right">
                   {fmtHours(shift.hours)}
                 </td>
               </tr>

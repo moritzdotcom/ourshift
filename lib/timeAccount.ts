@@ -263,7 +263,7 @@ export async function calculateWorkingStats(
           m
         ).length;
 
-        const monthlyHoursPlan = Math.round(Number(c.weeklyHours) * 4.35);
+        const monthlyHoursPlan = Math.round(Number(c.weeklyHours) * (52 / 12));
 
         entry.yVacation += vacationDays;
         entry.yHoursPlan += monthlyHoursPlan;

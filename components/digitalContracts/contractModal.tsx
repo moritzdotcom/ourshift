@@ -173,7 +173,7 @@ export default function ContractModal({
         <NumberInput
           label="Stundensatz"
           description={`Berechnet: ${fmtEuro(
-            (salaryMonthly || 0) / ((weeklyHours || 0) * 4.35)
+            (salaryMonthly || 0) / ((weeklyHours || 0) * (52 / 12))
           )}`}
           value={hourlyRate}
           onChange={(v) => setHourlyRate(v as any)}
