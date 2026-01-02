@@ -7,6 +7,22 @@ import { Anchor, Breadcrumbs, Button, Group, Stack, Text } from '@mantine/core';
 import { IconPrinter } from '@tabler/icons-react';
 import { ApiGetUserTimesheetResponse } from '../api/users/[userId]/timesheet';
 
+function fmtEuro(amount?: number | null) {
+  if (amount == null) return '-';
+  return new Intl.NumberFormat('de-DE', {
+    style: 'currency',
+    currency: 'EUR',
+  }).format(amount);
+}
+
+function fmtHours(hours?: number | null) {
+  if (hours == null) return '-';
+  return new Intl.NumberFormat('de-DE', {
+    style: 'unit',
+    unit: 'hour',
+  }).format(hours);
+}
+
 export default function TimeSheetsPage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
@@ -388,7 +404,7 @@ function TimeSheetView({
           </Text>
         </Group>
 
-        <table className="w-full border-collapse text-xs">
+        <table className="w-full border-collapse text-sm table-fixed">
           <thead>
             <tr>
               <th className="border p-0.5 text-left">Datum</th>
@@ -408,10 +424,10 @@ function TimeSheetView({
                 Gesamt
               </td>
               <td className="border p-0.5 font-medium text-right">
-                {totalHours.toFixed(2)}
+                {fmtHours(totalHours)}
               </td>
               <td className="border p-0.5 font-medium text-right">
-                {totalSupplements.toFixed(2)} €
+                {fmtEuro(totalSupplements)}
               </td>
             </tr>
           </tfoot>
@@ -482,7 +498,7 @@ function TimeSheetTableBody({
                     })}
                   </td>
                   <td className="border p-0.5 text-right">
-                    {day.shifts[0].hours.toFixed(2)}
+                    {fmtHours(day.shifts[0].hours)}
                   </td>
                 </>
               ) : (
@@ -497,7 +513,7 @@ function TimeSheetTableBody({
                 className="border p-0.5 text-right font-medium"
                 rowSpan={shiftCount}
               >
-                {day.supplements.toFixed(2)} €
+                {day.supplements > 0 ? fmtEuro(day.supplements) : ''}
               </td>
             </tr>
 
@@ -516,7 +532,7 @@ function TimeSheetTableBody({
                   })}
                 </td>
                 <td className="border p-0.5 text-right">
-                  {shift.hours.toFixed(2)}
+                  {fmtHours(shift.hours)}
                 </td>
               </tr>
             ))}

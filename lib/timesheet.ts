@@ -1,5 +1,6 @@
 import prisma from '@/lib/prismadb';
 import { ruleActiveOnDay } from './payRule';
+import { toZonedTime, fromZonedTime, formatInTimeZone } from 'date-fns-tz';
 
 export type TimeSheetShift = {
   start: string; // ISO
@@ -13,31 +14,28 @@ export type TimeSheetDay = {
   supplements: number; // euros, 2 decimals
 };
 
-function startOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
+const TZ = 'Europe/Berlin';
+
+export function startOfDay(date: Date) {
+  const zoned = toZonedTime(date, TZ); // Date in Berlin-Zeit
+  zoned.setHours(0, 0, 0, 0); // 00:00 Berlin
+  return fromZonedTime(zoned, TZ); // zurück nach UTC
 }
 
-function endOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(23, 59, 59, 999);
-  return x;
+export function endOfDay(date: Date) {
+  const zoned = toZonedTime(date, TZ);
+  zoned.setHours(23, 59, 59, 999);
+  return fromZonedTime(zoned, TZ);
 }
 
-function addDays(d: Date, days: number) {
-  const x = new Date(d);
-  x.setDate(x.getDate() + days);
-  return x;
+export function addDays(date: Date, days: number) {
+  const zoned = toZonedTime(date, TZ);
+  zoned.setDate(zoned.getDate() + days); // +1 Kalendertag in Berlin
+  return fromZonedTime(zoned, TZ);
 }
 
-function isoDayKey(d: Date) {
-  // YYYY-MM-DD in lokaler Zeit (Server TZ). Wenn du strikt Europe/Berlin willst,
-  // wäre eine TZ-Lib sinnvoll. Für OurShift in DE reicht das oft.
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+export function isoDayKey(date: Date) {
+  return formatInTimeZone(date, TZ, 'yyyy-MM-dd'); // Key aus Berlin-Sicht
 }
 
 function minutesToDate(dayStart: Date, minutes: number) {
