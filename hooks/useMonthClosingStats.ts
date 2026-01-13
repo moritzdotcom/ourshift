@@ -1,22 +1,6 @@
 import { MonthClosingShift } from '@/pages/management/monthClosing';
 import { useMemo } from 'react';
 
-function ms(d1: Date, d2: Date) {
-  return d2.getTime() - d1.getTime();
-}
-function minutes(d1: Date | string, d2: Date | string) {
-  return Math.max(0, Math.round(ms(new Date(d1), new Date(d2)) / 60000));
-}
-function sameDay(a: Date | string, b: Date | string) {
-  const ad = new Date(a);
-  const bd = new Date(b);
-  return (
-    ad.getFullYear() === bd.getFullYear() &&
-    ad.getMonth() === bd.getMonth() &&
-    ad.getDate() === bd.getDate()
-  );
-}
-
 export function useMonthClosingStats(shifts: MonthClosingShift[]) {
   return useMemo(() => {
     const total = shifts.length;
