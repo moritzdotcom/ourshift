@@ -6,6 +6,7 @@ import { Fragment, useMemo, useState } from 'react';
 import { Anchor, Breadcrumbs, Button, Group, Stack, Text } from '@mantine/core';
 import { IconPrinter } from '@tabler/icons-react';
 import { ApiGetUserTimesheetResponse } from '../api/users/[userId]/timesheet';
+import { isValid } from 'date-fns';
 
 function fmtEuro(amount?: number | null) {
   if (amount == null) return '-';
@@ -21,6 +22,20 @@ function fmtHours(hours?: number | null) {
     style: 'unit',
     unit: 'hour',
   }).format(Number(hours.toFixed(1)));
+}
+
+function fmtTime(date: string | Date) {
+  if (!isValid(new Date(date))) return '-';
+  return new Date(date).toLocaleTimeString('de-DE', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function fmtCode(c: 'VACATION' | 'SICK' | null) {
+  if (!c) return '';
+  if (c === 'SICK') return 'Krank';
+  if (c === 'VACATION') return 'Urlaub';
 }
 
 export default function TimeSheetsPage() {
@@ -136,6 +151,7 @@ export default function TimeSheetsPage() {
 
           /* Unterschriftenbereich */
           .signature-grid {
+            visibility: visible;
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10mm;
@@ -147,6 +163,9 @@ export default function TimeSheetsPage() {
             font-size: 11px;
             color: #333;
           }
+        }
+        .signature-grid {
+          visibility: hidden;
         }
       `}</style>
 
@@ -400,6 +419,7 @@ function TimeSheetView({
             <tr>
               <th className="border p-1 text-center">Datum</th>
               <th className="border p-1 text-center">Tag</th>
+              <th className="border p-1 text-center">Bezeichnung</th>
               <th className="border p-1 text-left">Uhrzeit Beginn</th>
               <th className="border p-1 text-left">Uhrzeit Ende</th>
               <th className="border p-1 text-right">Stunden</th>
@@ -414,7 +434,7 @@ function TimeSheetView({
           />
 
           <tr>
-            <td className="border p-1 font-medium" colSpan={4}>
+            <td className="border p-1 font-medium" colSpan={5}>
               Gesamt
             </td>
             <td className="border p-1 font-medium text-right">
@@ -498,24 +518,16 @@ function TimeSheetTableBody({
 
               {day.shifts.length > 0 ? (
                 <>
-                  <td className="border p-1">
-                    {new Date(day.shifts[0].start).toLocaleTimeString('de-DE', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </td>
-                  <td className="border p-1">
-                    {new Date(day.shifts[0].end).toLocaleTimeString('de-DE', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </td>
+                  <td className="border p-1">{fmtCode(day.shifts[0].code)}</td>
+                  <td className="border p-1">{fmtTime(day.shifts[0].start)}</td>
+                  <td className="border p-1">{fmtTime(day.shifts[0].end)}</td>
                   <td className="border p-1 text-right">
                     {fmtHours(day.shifts[0].hours)}
                   </td>
                 </>
               ) : (
                 <>
+                  <td className="border p-1"></td>
                   <td className="border p-1"></td>
                   <td className="border p-1"></td>
                   <td className="border p-1"></td>
@@ -532,18 +544,9 @@ function TimeSheetTableBody({
 
             {day.shifts.slice(1).map((shift, i) => (
               <tr key={`day-${day.day}-shift-${i}`}>
-                <td className="border p-1">
-                  {new Date(shift.start).toLocaleTimeString('de-DE', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </td>
-                <td className="border p-1">
-                  {new Date(shift.end).toLocaleTimeString('de-DE', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </td>
+                <td className="border p-1 text-right">{fmtCode(shift.code)}</td>
+                <td className="border p-1">{fmtTime(shift.start)}</td>
+                <td className="border p-1">{fmtTime(shift.end)}</td>
                 <td className="border p-1 text-right">
                   {fmtHours(shift.hours)}
                 </td>

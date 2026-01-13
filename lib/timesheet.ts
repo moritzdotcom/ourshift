@@ -3,11 +3,13 @@ import prisma from '@/lib/prismadb';
 import { ruleActiveOnDay } from './payRule';
 import { fromZonedTime, toZonedTime, formatInTimeZone } from 'date-fns-tz';
 import { addDays } from 'date-fns';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export type TimeSheetShift = {
   start: string; // ISO (UTC)
   end: string; // ISO (UTC)
   hours: number; // decimal hours
+  code: 'SICK' | 'VACATION' | null;
 };
 
 export type TimeSheetDay = {
@@ -132,6 +134,26 @@ function findHourlyRateCentsForDate(
   return active?.hourlyRateCents ?? 0;
 }
 
+function findWeeklyHoursForDate(
+  contracts: Array<{
+    validFrom: Date;
+    validUntil: Date | null;
+    weeklyHours: Decimal | null;
+  }>,
+  dayStartUtc: Date
+) {
+  const t = dayStartUtc.getTime();
+  const active = contracts
+    .filter(
+      (c) =>
+        c.validFrom.getTime() <= t &&
+        (!c.validUntil || c.validUntil.getTime() >= t)
+    )
+    .sort((a, b) => b.validFrom.getTime() - a.validFrom.getTime())[0];
+
+  return active?.weeklyHours ? Number(active?.weeklyHours) : 0;
+}
+
 /**
  * year: z.B. 2025
  * monthIndex: 0..11
@@ -208,10 +230,24 @@ export async function getUserTimesheet(
       userId,
       start: { lt: nextMonthStartUtc },
       end: { gt: monthStartUtc },
-      clockOut: { not: null },
+      OR: [
+        { clockOut: { not: null } },
+        { shiftAbsence: { status: 'APPROVED' } },
+      ],
     },
-    select: { id: true, start: true, end: true, clockIn: true, clockOut: true },
+    select: {
+      id: true,
+      start: true,
+      end: true,
+      clockIn: true,
+      clockOut: true,
+      shiftAbsence: { select: { reason: true } },
+    },
     orderBy: { start: 'asc' },
+  });
+
+  const vacationDays = await prisma.vacationDay.findMany({
+    where: { userId, date: { lte: nextMonthStartUtc, gte: monthStartUtc } },
   });
 
   // Output Tage initialisieren: 1..daysInMonth (kein Vormonat!)
@@ -300,16 +336,32 @@ export async function getUserTimesheet(
           start: cur.toISOString(),
           end: segEnd.toISOString(),
           hours: round2(hours),
+          code: s.shiftAbsence?.reason === 'SICKNESS' ? 'SICK' : null,
         });
 
-        days[dayKey].supplementsCents += calcSupplementsCentsForSegment(
-          dStartUtc,
-          cur,
-          segEnd
-        );
+        if (!s.shiftAbsence) {
+          days[dayKey].supplementsCents += calcSupplementsCentsForSegment(
+            dStartUtc,
+            cur,
+            segEnd
+          );
+        }
       }
 
       cur = segEnd;
+    }
+  }
+
+  for (const vd of vacationDays) {
+    const dayKey = berlinIsoDayKey(vd.date);
+    if (days[dayKey]) {
+      const weeklyHours = findWeeklyHoursForDate(user!.contracts, vd.date);
+      days[dayKey].shifts.push({
+        start: '-',
+        end: '-',
+        hours: round2(weeklyHours / 5),
+        code: 'VACATION',
+      });
     }
   }
 
