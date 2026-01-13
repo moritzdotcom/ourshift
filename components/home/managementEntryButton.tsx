@@ -16,10 +16,9 @@ import {
   IconCoins,
   IconClock2,
   IconCalendarCheck,
+  IconFileTime,
 } from '@tabler/icons-react';
 import Link from 'next/link';
-
-type Role = 'EMPLOYEE' | 'MANAGER' | 'ADMIN';
 
 export default function ManagementEntryButton() {
   return (
@@ -103,6 +102,23 @@ export default function ManagementEntryButton() {
                 </Text>
                 <Text fz={11} c="dimmed" lh={1.4}>
                   Stunden & Urlaub einsehen
+                </Text>
+              </Box>
+            </Group>
+          </Link>
+
+          <Link
+            href="/management/timeSheets"
+            style={{ textDecoration: 'none' }}
+          >
+            <Group gap="xs" wrap="nowrap">
+              <IconFileTime size={18} stroke={1.5} />
+              <Box>
+                <Text fz="sm" fw={500} c="gray.9">
+                  Stundenzettel
+                </Text>
+                <Text fz={11} c="dimmed" lh={1.4}>
+                  Monatliche Arbeitsnachweise
                 </Text>
               </Box>
             </Group>
