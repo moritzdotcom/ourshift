@@ -414,7 +414,7 @@ function TimeSheetView({
           </Text>
         </Group>
 
-        <table className="w-full border-collapse text-sm table-fixed">
+        <table className="w-full border-collapse text-sm">
           <thead>
             <tr>
               <th className="border p-1 text-center">Datum</th>
@@ -544,7 +544,7 @@ function TimeSheetTableBody({
 
             {day.shifts.slice(1).map((shift, i) => (
               <tr key={`day-${day.day}-shift-${i}`}>
-                <td className="border p-1 text-right">{fmtCode(shift.code)}</td>
+                <td className="border p-1">{fmtCode(shift.code)}</td>
                 <td className="border p-1">{fmtTime(shift.start)}</td>
                 <td className="border p-1">{fmtTime(shift.end)}</td>
                 <td className="border p-1 text-right">
