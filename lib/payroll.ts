@@ -118,6 +118,7 @@ export function buildPayrollForMonth({
         Math.min(Number(new Date(s.clockOut)), Number(monthEnd))
       );
       totalMinutes += (en.getTime() - st.getTime()) / 60000;
+      if (s.shiftAbsence?.reason === 'SICKNESS') continue;
       const parts = splitShiftByDay(st, en);
 
       for (const p of parts) {
