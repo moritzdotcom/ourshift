@@ -304,7 +304,7 @@ export async function getUserTimesheet(
 
       const overlapHours = overlapTotalMs / 3_600_000;
       const add = hourlyRateCents * (percent / 100) * overlapHours;
-      cents += Math.round(add);
+      cents += add;
     }
 
     return cents;

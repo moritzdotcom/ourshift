@@ -111,9 +111,13 @@ export function buildPayrollForMonth({
     for (const s of userShifts) {
       if (!s.clockIn || !s.clockOut || !s.code || !s.code.isWorkingShift)
         continue;
-      const st = new Date(s.clockIn);
-      const en = new Date(s.clockOut);
-      totalMinutes += Math.round((en.getTime() - st.getTime()) / 60000);
+      const st = new Date(
+        Math.max(Number(new Date(s.clockIn)), Number(monthStart))
+      );
+      const en = new Date(
+        Math.min(Number(new Date(s.clockOut)), Number(monthEnd))
+      );
+      totalMinutes += (en.getTime() - st.getTime()) / 60000;
       const parts = splitShiftByDay(st, en);
 
       for (const p of parts) {
@@ -135,7 +139,7 @@ export function buildPayrollForMonth({
           if (hourly == null || r.percent == null) continue;
 
           const percent = Number(r.percent);
-          const amount = Math.round((ov / 60) * hourly * (percent / 100));
+          const amount = (ov / 60) * hourly * (percent / 100);
 
           const item = suppMap.get(r.id) ?? {
             name: r.name,
