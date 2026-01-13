@@ -72,10 +72,10 @@ function clamp(a: Date, lo: Date, hi: Date) {
   return new Date(Math.min(hi.getTime(), Math.max(lo.getTime(), a.getTime())));
 }
 
-function overlapMs(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) {
+function overlapMinutes(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) {
   const s = Math.max(aStart.getTime(), bStart.getTime());
   const e = Math.min(aEnd.getTime(), bEnd.getTime());
-  return Math.max(0, e - s);
+  return Math.max(0, (e - s) / 60_000);
 }
 
 type PayRuleLite = {
@@ -296,13 +296,13 @@ export async function getUserTimesheet(
 
       const intervals = ruleIntervalsForDay(rule, dayStartUtc);
 
-      let overlapTotalMs = 0;
+      let overlapTotalMinutes = 0;
       for (const [rStart, rEnd] of intervals) {
-        overlapTotalMs += overlapMs(segStart, segEnd, rStart, rEnd);
+        overlapTotalMinutes += overlapMinutes(segStart, segEnd, rStart, rEnd);
       }
-      if (!overlapTotalMs) continue;
+      if (!overlapTotalMinutes) continue;
 
-      const overlapHours = overlapTotalMs / 3_600_000;
+      const overlapHours = overlapTotalMinutes / 60;
       const add = hourlyRateCents * (percent / 100) * overlapHours;
       cents += add;
     }
