@@ -54,7 +54,7 @@ type Props = {
     empId: string,
     y: number,
     m: number,
-    d: number
+    d: number,
   ) => Array<ShiftObj> | undefined;
   tryWriteCell: (
     empId: string,
@@ -62,7 +62,7 @@ type Props = {
     m: number,
     d: number,
     existingId: string | null | undefined,
-    code: string | ShiftCode
+    code: string | ShiftCode,
   ) => void;
   isPastDate: (y: number, m: number, d: number) => boolean;
   activeCode: ShiftCode | 'K' | 'U';
@@ -97,12 +97,12 @@ export default function PlannerGridMonth({
 
   const { data: taData, isLoading } = useSWR<WorkingStatsEntry[]>(
     `/api/shifts/currentShift/${year}/${month}`,
-    taFetcher
+    taFetcher,
   );
 
   function findHoliday(iso: string) {
     return holidays.find(
-      (h) => new Date(h.date).toISOString().slice(0, 10) === iso
+      (h) => new Date(h.date).toISOString().slice(0, 10) === iso,
     );
   }
 
@@ -122,7 +122,7 @@ export default function PlannerGridMonth({
           <ActionIcon
             component={Link}
             href={`/management/planner/print?from=${toYMD(
-              bounds.from
+              bounds.from,
             )}&to=${toYMD(bounds.to)}`}
             variant="subtle"
             size="lg"
@@ -164,8 +164,8 @@ export default function PlannerGridMonth({
                   weekend
                     ? 'bg-sky-100'
                     : holiday
-                    ? 'bg-yellow-100'
-                    : 'bg-white'
+                      ? 'bg-yellow-100'
+                      : 'bg-white'
                 }`}
                 title={holiday ? holiday.name : undefined}
               >
@@ -210,7 +210,7 @@ export default function PlannerGridMonth({
                       >
                         UT:{' '}
                         {empTaData
-                          ? `${empTaData.yVacation}/${empTaData.yVacationPlan}`
+                          ? `${empTaData.yVacation}/${Math.round(empTaData.yVacationPlan * 10) / 10}`
                           : '...'}
                       </Text>
                     </Tooltip>
@@ -223,7 +223,7 @@ export default function PlannerGridMonth({
                         STD:{' '}
                         {empTaData
                           ? `${numFormat(empTaData.mHoursPlanned)}/${numFormat(
-                              empTaData.mHoursPlan
+                              empTaData.mHoursPlan,
                             )}`
                           : '...'}
                       </Text>
