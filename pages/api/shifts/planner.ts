@@ -7,7 +7,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handle(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   const { ok, error } = await authGuard(req, 'MANAGER');
   if (!ok) return res.status(401).json({ error });
@@ -16,7 +16,7 @@ export default async function handle(
     await handleGET(req, res);
   } else {
     throw new Error(
-      `The HTTP ${req.method} method is not supported at this route.`
+      `The HTTP ${req.method} method is not supported at this route.`,
     );
   }
 }
@@ -36,12 +36,12 @@ async function handleGET(req: NextApiRequest, res: NextApiResponse) {
     const { where: shiftWhere, error: shiftError } = buildShiftWhereQuery(
       req.query.from,
       req.query.to,
-      'contained'
+      'overlap',
     );
     const { where: vacaWhere, error: vacaError } = buildVacationDayWhereQuery(
       req.query.from,
       req.query.to,
-      'contained'
+      'contained',
     );
     if (shiftError || vacaError)
       return res.status(400).json({ error: shiftError || vacaError });
