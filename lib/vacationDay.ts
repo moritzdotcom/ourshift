@@ -6,10 +6,16 @@ function parseISO(input: unknown): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+function endOfDay(date: Date) {
+  const d = new Date(date);
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
+
 export function buildVacationDayWhereQuery(
   from: unknown,
   to: unknown,
-  mode?: 'overlap' | 'contained'
+  mode?: 'overlap' | 'contained',
 ) {
   const fromDate = parseISO(from);
   const toDate = parseISO(to);
@@ -29,15 +35,15 @@ export function buildVacationDayWhereQuery(
   if (fromDate || toDate) {
     if (mode === 'overlap' && fromDate && toDate) {
       where = {
-        AND: [{ date: { lt: toDate } }, { date: { gte: fromDate } }],
+        AND: [{ date: { lt: endOfDay(toDate) } }, { date: { gte: fromDate } }],
       };
     } else {
       if (fromDate && toDate) {
-        where = { date: { gte: fromDate, lte: toDate } };
+        where = { date: { gte: fromDate, lte: endOfDay(toDate) } };
       } else {
         where = {
           ...(fromDate ? { date: { gte: fromDate } } : {}),
-          ...(toDate ? { date: { lte: toDate } } : {}),
+          ...(toDate ? { date: { lte: endOfDay(toDate) } } : {}),
         };
       }
     }

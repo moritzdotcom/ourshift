@@ -7,10 +7,16 @@ function parseISO(input: unknown): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+const endOfDay = (date: Date) => {
+  const d = new Date(date);
+  d.setHours(23, 59, 59, 999);
+  return d;
+};
+
 export function buildShiftWhereQuery(
   from: unknown,
   to: unknown,
-  mode?: 'overlap' | 'contained'
+  mode?: 'overlap' | 'contained',
 ) {
   const fromDate = parseISO(from);
   const toDate = parseISO(to);
@@ -30,12 +36,12 @@ export function buildShiftWhereQuery(
   if (fromDate || toDate) {
     if (mode === 'overlap' && fromDate && toDate) {
       where = {
-        AND: [{ start: { lt: toDate } }, { end: { gte: fromDate } }],
+        AND: [{ start: { lt: endOfDay(toDate) } }, { end: { gte: fromDate } }],
       };
     } else {
       where = {
         ...(fromDate ? { start: { gte: fromDate } } : {}),
-        ...(toDate ? { end: { lte: toDate } } : {}),
+        ...(toDate ? { end: { lte: endOfDay(toDate) } } : {}),
       };
     }
   }
@@ -44,7 +50,7 @@ export function buildShiftWhereQuery(
 
 export function shiftIsActive(
   shift: { start: Date | string; end: Date | string },
-  gracePeriod?: number
+  gracePeriod?: number,
 ) {
   const now = new Date();
   const start = new Date(new Date(shift.start).getTime() - (gracePeriod || 0));
@@ -62,7 +68,7 @@ export function splitShiftByDay(startUtc: Date, endUtc: Date) {
     const dayISO = curWall.toISODate()!;
     const { startUtc: dayStartUtc, endUtc: dayEndUtc } = dayBoundsUtc(dayISO);
     const segStart = new Date(
-      Math.max(startUtc.getTime(), dayStartUtc.getTime())
+      Math.max(startUtc.getTime(), dayStartUtc.getTime()),
     );
     const segEnd = new Date(Math.min(endUtc.getTime(), dayEndUtc.getTime()));
     parts.push({ day: dayISO, segStart, segEnd });
