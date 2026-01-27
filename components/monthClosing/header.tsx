@@ -11,15 +11,8 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import {
-  IconCalendar,
-  IconCheck,
-  IconPrinter,
-  IconZoomIn,
-  IconZoomOut,
-} from '@tabler/icons-react';
+import { IconCalendar, IconCheck, IconPrinter } from '@tabler/icons-react';
 import Link from 'next/link';
-import { Dispatch, SetStateAction } from 'react';
 
 export default function MonthClosingHeader({
   shifts,
