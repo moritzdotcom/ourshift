@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
 import {
+  ActionIcon,
   Button,
   Group,
   Loader,
@@ -14,11 +15,12 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { IconUser, IconCalendar } from '@tabler/icons-react';
+import { IconUser, IconCalendar, IconPrinter } from '@tabler/icons-react';
 import ManagementLayout from '@/layouts/managementLayout';
 import { ApiGetSimpleUsersResponse } from '@/pages/api/users';
 import { ApiUserTimeAccountResponse } from '@/pages/api/users/[userId]/timeAccount';
 import { showSuccess } from '@/lib/toast';
+import Link from 'next/link';
 
 const monthLabelsShort = [
   'Jan',
@@ -49,14 +51,14 @@ export default function TimeAccountUserPage() {
   const [loading, setLoading] = useState(false);
 
   const [manualAdjustment, setManualAdjustment] = useState<number>(
-    data?.manualAdjustment || 0
+    data?.manualAdjustment || 0,
   );
 
   // User-Liste holen (z. B. für Dropdown)
   useEffect(() => {
     async function fetchUsers() {
       const { data } = await axios.get<ApiGetSimpleUsersResponse>(
-        '/api/users?simple=true'
+        '/api/users?simple=true',
       );
       setUsers(data.filter((u) => u.isActive));
     }
@@ -77,10 +79,10 @@ export default function TimeAccountUserPage() {
       setLoading(true);
       try {
         const { data } = await axios.get<ApiUserTimeAccountResponse>(
-          `/api/users/${selectedUserId}/timeAccount`, // <-- Endpoint anpassen
+          `/api/users/${selectedUserId}/timeAccount`,
           {
             params: { year },
-          }
+          },
         );
         setData(data);
       } finally {
@@ -141,7 +143,7 @@ export default function TimeAccountUserPage() {
     },
     {
       key: 'plannedVacation' as const,
-      label: 'Urlaub Soll',
+      label: 'Urlaub Plan',
       type: 'days',
       variant: 'bold' as const,
     },
@@ -159,7 +161,7 @@ export default function TimeAccountUserPage() {
         const y = new Date().getFullYear() - i;
         return { value: String(y), label: String(y) };
       }),
-    []
+    [],
   );
 
   const userOptions = useMemo(
@@ -168,14 +170,14 @@ export default function TimeAccountUserPage() {
         value: u.id,
         label: `${u.firstName} ${u.lastName}`,
       })),
-    [users]
+    [users],
   );
 
   const averageHourlySalary = useMemo(() => {
     if (!data) return 0;
     const totalSalaryCents = data.monthlyData.reduce(
       (sum, m) => sum + m.averageSalaryCents,
-      0
+      0,
     );
     return totalSalaryCents / data.monthlyData.length / 100;
   }, [data]);
@@ -192,7 +194,7 @@ export default function TimeAccountUserPage() {
       | 'overtime'
       | 'totalVacation'
       | 'plannedVacation'
-      | 'sickDays'
+      | 'sickDays',
   ) {
     const m = data?.monthlyData.find((m) => m.month === monthIndex);
     if (!m) return 0;
@@ -219,7 +221,7 @@ export default function TimeAccountUserPage() {
       | 'totalVacation'
       | 'plannedVacation'
       | 'sickDays',
-    includeManualAdjustment = false
+    includeManualAdjustment = false,
   ) {
     if (!data) return 0;
     if (
@@ -242,7 +244,18 @@ export default function TimeAccountUserPage() {
       <div className="p-6">
         <Group justify="space-between" align="flex-start" mb="md">
           <Stack gap={2}>
-            <Title order={3}>Zeitarbeitskonto - Detail</Title>
+            <Group>
+              <Title order={3}>Zeitarbeitskonto - Detail</Title>
+              <ActionIcon
+                component={Link}
+                href={`/management/timeAccount/${selectedUserId}/print?year=${year}`}
+                variant="subtle"
+                size="lg"
+                disabled={!data}
+              >
+                <IconPrinter />
+              </ActionIcon>
+            </Group>
             {currentUserName && (
               <Text c="dimmed">
                 {currentUserName} · Jahr {year}
@@ -362,14 +375,14 @@ export default function TimeAccountUserPage() {
                 ? `${getTotalValue('overtime')} Überstunden ≙ ${fmtEuro(
                     data?.monthlyData.reduce(
                       (sum, m) => sum + m.overtime * m.averageSalaryCents,
-                      0
-                    ) / 100
+                      0,
+                    ) / 100,
                   )} Gutschrift`
                 : `${-getTotalValue('overtime')} Minusstunden ≙ ${fmtEuro(
                     data?.monthlyData.reduce(
                       (sum, m) => sum + m.overtime * m.averageSalaryCents,
-                      0
-                    ) / 100
+                      0,
+                    ) / 100,
                   )} Nachzahlung`}
             </Text>
             {/* Formular für manuellen Ausgleich hier */}
@@ -385,10 +398,10 @@ export default function TimeAccountUserPage() {
             <Text c="dimmed" size="sm" mt={6} mb={8}>
               {manualAdjustment >= 0
                 ? `Gutschrift von ${fmtEuro(
-                    manualAdjustment * averageHourlySalary
+                    manualAdjustment * averageHourlySalary,
                   )}`
                 : `Nachzahlung von ${fmtEuro(
-                    manualAdjustment * averageHourlySalary
+                    manualAdjustment * averageHourlySalary,
                   )}`}
             </Text>
             <Group justify="flex-end">
