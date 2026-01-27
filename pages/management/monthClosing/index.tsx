@@ -34,9 +34,10 @@ export type MonthClosingShift = {
 
 export default function MonthClosingPage() {
   // Monat wählen
-  const today = new Date();
-  const [year, setYear] = useState<number>(today.getFullYear());
-  const [month, setMonth] = useState<number>(today.getMonth() - 1); // 0-basiert
+  const lastMonth = new Date();
+  lastMonth.setMonth(lastMonth.getMonth() - 1);
+  const [year, setYear] = useState<number>(lastMonth.getFullYear());
+  const [month, setMonth] = useState<number>(lastMonth.getMonth()); // 0-basiert
 
   const [shifts, setShifts] = useState<MonthClosingShift[]>([]);
 
@@ -74,7 +75,7 @@ export default function MonthClosingPage() {
         prev.map((p) => {
           if (s.id == p.id) return { ...p, ...s };
           return p;
-        })
+        }),
       );
     }
   }
