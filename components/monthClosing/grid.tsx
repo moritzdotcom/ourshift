@@ -59,7 +59,6 @@ export default function MonthClosingGrid({
   // Wir messen die Breite des "Timeline"-Bereichs (ohne Day-Label-Spalte)
   const { ref: outerRef, width: outerWidth } = useElementSize<HTMLDivElement>();
   const timelineWidth = Math.max(0, outerWidth - DAY_LABEL_WIDTH);
-  console.log(outerWidth);
 
   // Jede Stunde bekommt exakt 1/24 der verfügbaren Breite
   const hourWidth = Math.max(8, timelineWidth / 24); // min clamp, sonst wird’s zu klein
@@ -71,7 +70,7 @@ export default function MonthClosingGrid({
       year,
       month,
       hourWidth,
-      LANE_HEIGHT
+      LANE_HEIGHT,
     );
   }, [shifts, year, month, hourWidth, LANE_HEIGHT]);
 
@@ -97,7 +96,7 @@ export default function MonthClosingGrid({
           const parts = perDay[dayNum] || [];
           const rowHeight = Math.max(
             LANE_HEIGHT,
-            dayHeights[dayNum] ?? LANE_HEIGHT
+            dayHeights[dayNum] ?? LANE_HEIGHT,
           );
 
           return (
