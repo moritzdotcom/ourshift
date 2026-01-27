@@ -78,7 +78,7 @@ export default function PlannerPrintPage() {
   // Indexierung: userId -> Map(tag -> code)
   const userIds = useMemo(
     () => Array.from(new Set(shifts.map((s) => s.userId))),
-    [shifts]
+    [shifts],
   );
   const byUserDay = useMemo(() => {
     const m = new Map<string, Map<number, Array<ShiftCode | 'K' | 'U' | ''>>>();
@@ -95,7 +95,7 @@ export default function PlannerPrintPage() {
 
   function findHoliday(iso: string) {
     return holidays.find(
-      (h) => new Date(h.date).toISOString().slice(0, 10) === iso
+      (h) => new Date(h.date).toISOString().slice(0, 10) === iso,
     );
   }
 
@@ -131,14 +131,19 @@ export default function PlannerPrintPage() {
       users.map((u) => fullName(u)).sort((a, b) => b.length - a.length)[0]
         ?.length || 0;
     const longestUserWidth = longestUser * 8;
-    const otherWidth = Math.floor((vpWidth - longestUserWidth) / days.length);
+    const otherWidth = Math.min(
+      45,
+      Math.floor((vpWidth - longestUserWidth) / days.length),
+    );
     return [longestUserWidth, otherWidth];
   }, [days, vpWidth, users]);
 
   return (
     <div
       className="print-root mx-auto"
-      style={{ width: `${firstColWidth + otherColsWidth * days.length}px` }}
+      style={{
+        width: `${firstColWidth + otherColsWidth * days.length}px`,
+      }}
     >
       <div className="print:hidden my-3">
         <Link href="/management/planner">
@@ -197,7 +202,7 @@ export default function PlannerPrintPage() {
                 <div
                   key={d.getDate()}
                   className={`flex flex-col items-center justify-center w-full h-full p-1 border-b-2 border-r ${renderBgColor(
-                    d
+                    d,
                   )}`}
                 >
                   <div className="text-sm font-medium">{d.getDate()}</div>
@@ -208,7 +213,7 @@ export default function PlannerPrintPage() {
             <div>
               {users
                 .filter((u) =>
-                  employedInMonth(u, from.getFullYear(), from.getMonth())
+                  employedInMonth(u, from.getFullYear(), from.getMonth()),
                 )
                 .sort((a, b) => fullName(a).localeCompare(fullName(b), 'de'))
                 .map((u) => {
@@ -229,7 +234,7 @@ export default function PlannerPrintPage() {
                         return (
                           <div
                             className={`${renderBgColor(
-                              d
+                              d,
                             )} flex flex-col gap-1 items-center justify-center border-b border-r`}
                             key={`${u.id}-${d.getDate()}`}
                           >
@@ -268,7 +273,12 @@ export default function PlannerPrintPage() {
           }
         }
         .print-root {
-          font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+          font-family:
+            system-ui,
+            -apple-system,
+            Segoe UI,
+            Roboto,
+            Arial;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
           color: #111;
