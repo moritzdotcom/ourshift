@@ -6,7 +6,7 @@ import { pickContractForDate } from '@/lib/digitalContract';
 
 export default async function handle(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   const { ok, error } = await authGuard(req, 'MANAGER');
   if (!ok) return res.status(401).json({ error });
@@ -20,7 +20,7 @@ export default async function handle(
     await handleGET(req, res, userId);
   } else {
     throw new Error(
-      `The HTTP ${req.method} method is not supported at this route.`
+      `The HTTP ${req.method} method is not supported at this route.`,
     );
   }
 }
@@ -53,7 +53,7 @@ export type ApiUserTimeAccountResponse = {
 async function handleGET(
   req: NextApiRequest,
   res: NextApiResponse,
-  id: string
+  id: string,
 ) {
   const year = req.query.year || new Date().getFullYear();
 
@@ -103,11 +103,12 @@ async function handleGET(
 
   for (let month = 0; month < 12; month++) {
     const monthShifts = user.shifts.filter(
-      (shift) => shift.start.getMonth() === month
+      (shift) => shift.start.getMonth() === month,
     );
     const monthContracts = user.contracts.filter((contract) => {
       const contractStart = contract.validFrom;
-      const contractEnd = contract.validUntil || new Date();
+      const contractEnd =
+        contract.validUntil || new Date(Number(year) + 1, 0, 1);
       return (
         (contractStart.getFullYear() < Number(year) ||
           (contractStart.getFullYear() === Number(year) &&
@@ -158,7 +159,7 @@ async function handleGET(
       const daysInMonth = Math.round(
         (effectiveEnd.getTime() - effectiveStart.getTime()) /
           (1000 * 60 * 60 * 24) +
-          1
+          1,
       );
       const daysInFullMonth = monthEnd.getDate();
       const weeksInMonth = (daysInMonth / daysInFullMonth) * (52 / 12);
