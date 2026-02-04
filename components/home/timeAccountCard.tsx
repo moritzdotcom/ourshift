@@ -69,7 +69,7 @@ export default function HomeTimeAccountCard({
     totalVacationEntitlement > 0
       ? Math.max(
           0,
-          Math.min(100, (vacationTaken / totalVacationEntitlement) * 100)
+          Math.min(100, (vacationTaken / totalVacationEntitlement) * 100),
         )
       : 0;
 
@@ -94,7 +94,7 @@ export default function HomeTimeAccountCard({
           </Group>
           <Group gap="xs">
             <Text c={overtimeColor} variant="light">
-              {overtime} Std.
+              {overtime.toFixed(1).replace('.', ',')} Std.
             </Text>
           </Group>
         </Group>
@@ -107,8 +107,8 @@ export default function HomeTimeAccountCard({
                   0,
                   Math.min(
                     100,
-                    (Math.abs(overtime) / Math.abs(yHoursPlan)) * 100
-                  )
+                    (Math.abs(overtime) / Math.abs(yHoursPlan)) * 100,
+                  ),
                 )
               : 0
           }
