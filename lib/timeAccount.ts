@@ -16,35 +16,35 @@ function shiftsForMonth<
   S extends {
     start: Date;
     end: Date;
-  }
+  },
 >(shifts: S[], year: number, month: number) {
   const bom = new Date(year, month, 1, 0, 0, 0, 0).getTime();
   const eom = new Date(year, month + 1, 0, 23, 59, 59, 999).getTime();
   return shifts.filter(
-    (s) => s.end.getTime() >= bom && s.start.getTime() <= eom
+    (s) => s.end.getTime() >= bom && s.start.getTime() <= eom,
   );
 }
 
 function vacationDaysForMonth<
   VD extends {
     date: Date;
-  }
+  },
 >(vacationDays: VD[], year: number, month: number) {
   const bom = new Date(year, month, 1, 0, 0, 0, 0).getTime();
   const eom = new Date(year, month + 1, 0, 23, 59, 59, 999).getTime();
   return vacationDays.filter(
-    (d) => d.date.getTime() >= bom && d.date.getTime() <= eom
+    (d) => d.date.getTime() >= bom && d.date.getTime() <= eom,
   );
 }
 
 function trailingVacationDaysAtMonthEnd<
   VD extends {
     date: Date;
-  }
+  },
 >(
   days: VD[],
   year: number,
-  month0: number // 0-basiert
+  month0: number, // 0-basiert
 ): VD[] {
   const vacationDays = vacationDaysForMonth(days, year, month0);
   const lastDay = new Date(year, month0 + 1, 0).getDate();
@@ -73,7 +73,7 @@ function clampIntervalToMonth(
   start: Date,
   end: Date,
   year: number,
-  month0: number
+  month0: number,
 ) {
   const bom = new Date(year, month0, 1, 0, 0, 0, 0);
   const eom = new Date(year, month0 + 1, 0, 23, 59, 59, 999);
@@ -92,7 +92,7 @@ function shiftMinutesForMonth(
     shiftAbsence: { reason: 'SICKNESS' } | null;
   },
   year: number,
-  month0: number
+  month0: number,
 ) {
   const shownStart = s.clockIn ?? s.start;
   const shownEnd = s.clockOut ?? s.end;
@@ -112,7 +112,7 @@ function plannedShiftMinutesForMonth(
     end: Date;
   },
   year: number,
-  month0: number
+  month0: number,
 ) {
   const shownStart = s.start;
   const shownEnd = s.end;
@@ -142,7 +142,7 @@ export type WorkingStatsEntry = {
 
 export async function calculateWorkingStats(
   year: number,
-  month: number
+  month: number,
 ): Promise<WorkingStatsEntry[]> {
   const boy = new Date(year, 0, 1, 0, 0, 0, 0);
   const eoy = new Date(year + 1, 0, 0, 23, 59, 59, 999);
@@ -176,7 +176,7 @@ export async function calculateWorkingStats(
       },
       contracts: {
         where: {
-          validFrom: { lte: eotf },
+          validFrom: { lte: eoy },
           OR: [{ validUntil: null }, { validUntil: { gte: boy } }],
         },
         select: {
@@ -203,7 +203,7 @@ export async function calculateWorkingStats(
   const getRestVacation = (userId: string) => {
     if (!statsDezLastYear) return 0;
     const userStats = (statsDezLastYear.payload as WorkingStatsEntry[]).find(
-      (e) => e.user.id === userId
+      (e) => e.user.id === userId,
     );
     if (!userStats) return 0;
     return userStats.yVacationPlan - userStats.yVacation;
@@ -233,17 +233,17 @@ export async function calculateWorkingStats(
 
     for (const c of u.contracts) {
       const start = new Date(
-        Math.max(c.validFrom.setHours(0, 0, 0, 0), boy.getTime())
+        Math.max(c.validFrom.setHours(0, 0, 0, 0), boy.getTime()),
       );
       const end = new Date(
         c.validUntil
           ? Math.min(c.validUntil.setHours(23, 59, 59, 999), eotf.getTime())
-          : eotf
+          : eotf,
       );
       const endOfYear = new Date(
         c.validUntil
           ? Math.min(c.validUntil.setHours(23, 59, 59, 999), eoy.getTime())
-          : eoy
+          : eoy,
       );
       const totalMonths = monthsBetweenInclusive(start, endOfYear);
       entry.yVacationPlan += ((c.vacationDaysAnnual || 0) / 12) * totalMonths;
@@ -260,7 +260,7 @@ export async function calculateWorkingStats(
         const vacationDays = vacationDaysForMonth(
           u.vacationDays,
           year,
-          m
+          m,
         ).length;
 
         const monthlyHoursPlan = Math.round(Number(c.weeklyHours) * (52 / 12));
@@ -283,10 +283,10 @@ export async function calculateWorkingStats(
             entry.mHoursPlanned += totalPlannedHours;
             if (s.shiftAbsence) {
               sickDaySet.add(
-                `${s.start.getFullYear()}${s.start.getMonth()}${s.start.getDate()}`
+                `${s.start.getFullYear()}${s.start.getMonth()}${s.start.getDate()}`,
               );
               sickDaySetM.add(
-                `${s.start.getFullYear()}${s.start.getMonth()}${s.start.getDate()}`
+                `${s.start.getFullYear()}${s.start.getMonth()}${s.start.getDate()}`,
               );
             }
           }
@@ -294,11 +294,11 @@ export async function calculateWorkingStats(
           const prevMonthVacationDays = trailingVacationDaysAtMonthEnd(
             u.vacationDays,
             year,
-            m - 1
+            m - 1,
           ).length;
 
           const fullVacationWeeks = Math.floor(
-            (vacationDays + prevMonthVacationDays) / 5
+            (vacationDays + prevMonthVacationDays) / 5,
           );
           const vacationHours = fullVacationWeeks * Number(c.weeklyHours || 0);
           entry.mHours += vacationHours;
@@ -314,7 +314,7 @@ export async function calculateWorkingStats(
                 : shiftMinutesForMonth(s, year, m)) / 60;
             if (s.shiftAbsence) {
               sickDaySet.add(
-                `${s.start.getFullYear()}${s.start.getMonth()}${s.start.getDate()}`
+                `${s.start.getFullYear()}${s.start.getMonth()}${s.start.getDate()}`,
               );
             }
           }
