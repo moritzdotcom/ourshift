@@ -54,10 +54,6 @@ function berlinIsoDayKey(dateUtc: Date) {
   return formatInTimeZone(dateUtc, TZ, 'yyyy-MM-dd');
 }
 
-function berlinDayNumber(dateUtc: Date) {
-  return Number(formatInTimeZone(dateUtc, TZ, 'd')); // 1..31
-}
-
 function berlinEndOfDayUtc(dayStartUtc: Date) {
   const z = toZonedTime(dayStartUtc, TZ);
   z.setHours(23, 59, 59, 999);
@@ -91,7 +87,7 @@ type PayRuleLite = {
 
 function ruleIntervalsForDay(
   rule: PayRuleLite,
-  dayStartUtc: Date
+  dayStartUtc: Date,
 ): Array<[Date, Date]> {
   const ds = dayStartUtc;
   const de = berlinEndOfDayUtc(dayStartUtc);
@@ -120,14 +116,14 @@ function findHourlyRateCentsForDate(
     validUntil: Date | null;
     hourlyRateCents: number | null;
   }>,
-  dayStartUtc: Date
+  dayStartUtc: Date,
 ) {
   const t = dayStartUtc.getTime();
   const active = contracts
     .filter(
       (c) =>
         c.validFrom.getTime() <= t &&
-        (!c.validUntil || c.validUntil.getTime() >= t)
+        (!c.validUntil || c.validUntil.getTime() >= t),
     )
     .sort((a, b) => b.validFrom.getTime() - a.validFrom.getTime())[0];
 
@@ -140,14 +136,14 @@ function findWeeklyHoursForDate(
     validUntil: Date | null;
     weeklyHours: Decimal | null;
   }>,
-  dayStartUtc: Date
+  dayStartUtc: Date,
 ) {
   const t = dayStartUtc.getTime();
   const active = contracts
     .filter(
       (c) =>
         c.validFrom.getTime() <= t &&
-        (!c.validUntil || c.validUntil.getTime() >= t)
+        (!c.validUntil || c.validUntil.getTime() >= t),
     )
     .sort((a, b) => b.validFrom.getTime() - a.validFrom.getTime())[0];
 
@@ -161,7 +157,7 @@ function findWeeklyHoursForDate(
 export async function getUserTimesheet(
   userId: string,
   year: number,
-  monthIndex: number
+  monthIndex: number,
 ) {
   if (!Number.isInteger(year) || year < 1970 || year > 2100)
     throw new Error('Invalid year');
@@ -173,11 +169,11 @@ export async function getUserTimesheet(
   // endExclusive = 1. des Folgemonats 00:00 Berlin (als UTC)
   const monthStartUtc = fromZonedTime(
     new Date(year, monthIndex, 1, 0, 0, 0, 0),
-    TZ
+    TZ,
   );
   const nextMonthStartUtc = fromZonedTime(
     new Date(year, monthIndex + 1, 1, 0, 0, 0, 0),
-    TZ
+    TZ,
   );
 
   // Anzahl Tage im Monat (kalenderlogisch)
@@ -265,7 +261,7 @@ export async function getUserTimesheet(
   for (let d = 1; d <= daysInMonth; d++) {
     const dayStartUtc = fromZonedTime(
       new Date(year, monthIndex, d, 0, 0, 0, 0),
-      TZ
+      TZ,
     );
     const key = berlinIsoDayKey(dayStartUtc);
     days[key] = { day: d, shifts: [], supplementsCents: 0, dayStartUtc };
@@ -276,19 +272,18 @@ export async function getUserTimesheet(
   function calcSupplementsCentsForSegment(
     dayStartUtc: Date,
     segStart: Date,
-    segEnd: Date
+    segEnd: Date,
   ) {
     const dayKey = berlinIsoDayKey(dayStartUtc);
     const hourlyRateCents = findHourlyRateCentsForDate(
       user!.contracts,
-      dayStartUtc
+      new Date(dayKey),
     );
     if (!hourlyRateCents) return 0;
 
     let cents = 0;
 
     for (const rule of payRules) {
-      // Deine bestehende Logik:
       if (!ruleActiveOnDay(rule, dayKey, holidays)) continue;
 
       const percent = decimalToNumber(rule.percent);
@@ -343,7 +338,7 @@ export async function getUserTimesheet(
           days[dayKey].supplementsCents += calcSupplementsCentsForSegment(
             dStartUtc,
             cur,
-            segEnd
+            segEnd,
           );
         }
       }
@@ -368,11 +363,11 @@ export async function getUserTimesheet(
   // Output sortieren: 1..daysInMonth (stabil)
   const out: TimeSheetDay[] = Array.from(
     { length: daysInMonth },
-    (_, i) => i + 1
+    (_, i) => i + 1,
   ).map((d) => {
     const dayStartUtc = fromZonedTime(
       new Date(year, monthIndex, d, 0, 0, 0, 0),
-      TZ
+      TZ,
     );
     const key = berlinIsoDayKey(dayStartUtc);
     const entry = days[key] ?? {
