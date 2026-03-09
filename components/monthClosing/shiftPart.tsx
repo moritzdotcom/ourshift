@@ -53,11 +53,12 @@ export default function MonthClosingShiftPart({
           width: part.widthPx ?? 10,
           opacity: part.isStamped ? 1 : 0.6,
         }}
+        onClick={() => openBackfill()}
       >
         <div className="px-1.5 text-sm font-semibold truncate">
           {part.originalShift.user.firstName} · {code} ·{' '}
           {Math.round(
-            (part.end.getTime() - part.start.getTime()) / 60_000 / 6
+            (part.end.getTime() - part.start.getTime()) / 60_000 / 6,
           ) / 10}{' '}
           Std.
         </div>
