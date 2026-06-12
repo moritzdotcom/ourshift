@@ -29,7 +29,7 @@ export type ApiMyShiftResponse = {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   try {
     const { ok, userId, error } = await getCurrentUserId(req);
@@ -38,12 +38,12 @@ export default async function handler(
     const { where: shiftWhere, error: shiftError } = buildShiftWhereQuery(
       req.query.from,
       req.query.to,
-      'overlap'
+      'overlap',
     );
     const { where: vacWhere, error: vacError } = buildVacationDayWhereQuery(
       req.query.from,
       req.query.to,
-      'overlap'
+      'overlap',
     );
     if (shiftError || vacError)
       return res.status(400).json({ error: shiftError || vacError });

@@ -132,6 +132,7 @@ export type WorkingStatsEntry = {
   yHoursPlanned: number; // Plan Stunden Jahr
   overtime: number; // Überstunden (Stunden, +/−)
   overtimePlanned: number; // Plan Überstunden (Stunden, +/−)
+  overtimePrevYear: number; // Restüberstunden Vorjahr
   mVacation: number; // Urlaubstage Monat (Ist)
   yVacation: number; // Urlaubstage Jahr (Ist)
   yVacationPlan: number; // Urlaubstage Jahr (Soll)
@@ -209,6 +210,15 @@ export async function calculateWorkingStats(
     return userStats.yVacationPlan - userStats.yVacation;
   };
 
+  const getRestOvertime = (userId: string) => {
+    if (!statsDezLastYear) return 0;
+    const userStats = (statsDezLastYear.payload as WorkingStatsEntry[]).find(
+      (e) => e.user.id === userId,
+    );
+    if (!userStats) return 0;
+    return userStats.overtime;
+  };
+
   const list = [];
   for (const u of users) {
     const entry = {
@@ -221,6 +231,7 @@ export async function calculateWorkingStats(
       yHoursPlanned: 0, // X
       overtime: 0, // X
       overtimePlanned: 0, // X
+      overtimePrevYear: getRestOvertime(u.id),
       mVacation: 0, // X
       yVacation: 0, // X
       yVacationPlan: 0, // X
@@ -329,8 +340,9 @@ export async function calculateWorkingStats(
     entry.ySickDays = sickDaySet.size;
     list.push({
       ...entry,
-      overtime: entry.yHours - entry.yHoursPlan,
-      overtimePlanned: entry.yHoursPlanned - entry.yHoursPlan,
+      overtime: entry.yHours - entry.yHoursPlan + getRestOvertime(u.id),
+      overtimePlanned:
+        entry.yHoursPlanned - entry.yHoursPlan + getRestOvertime(u.id),
     });
   }
   return list;

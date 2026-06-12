@@ -31,7 +31,7 @@ export default function TimeAccountSimple() {
       '/api/users/timeAccount',
       {
         params: { year, month, recalc },
-      }
+      },
     );
     setUpdatedAt(new Date(data.calculationDoneAt));
     setRows(data.payload);
@@ -123,7 +123,7 @@ export default function TimeAccountSimple() {
                   <Table.Th colSpan={3} ta="center">
                     Stunden Jahr
                   </Table.Th>
-                  <Table.Th colSpan={2} ta="center">
+                  <Table.Th colSpan={3} ta="center">
                     Überstunden
                   </Table.Th>
                   <Table.Th ta="center">Urlaub Monat</Table.Th>
@@ -142,6 +142,7 @@ export default function TimeAccountSimple() {
                   <Table.Th ta="center">Ist</Table.Th>
                   <Table.Th ta="center">Soll</Table.Th>
                   <Table.Th ta="center">Plan</Table.Th>
+                  <Table.Th ta="center">Vorjahr</Table.Th>
                   <Table.Th ta="center">Ist</Table.Th>
                   <Table.Th ta="center">Plan</Table.Th>
                   <Table.Th ta="center">Ist</Table.Th>
@@ -169,6 +170,12 @@ export default function TimeAccountSimple() {
                     <Table.Td ta="right">{fmt(r.yHours)}</Table.Td>
                     <Table.Td ta="right">{fmt(r.yHoursPlan)}</Table.Td>
                     <Table.Td ta="right">{fmt(r.yHoursPlanned)}</Table.Td>
+                    <Table.Td
+                      ta="right"
+                      c={r.overtimePrevYear >= 0 ? 'green' : 'red'}
+                    >
+                      {fmt(r.overtimePrevYear)}
+                    </Table.Td>
                     <Table.Td ta="right" c={r.overtime >= 0 ? 'green' : 'red'}>
                       {fmt(r.overtime)}
                     </Table.Td>

@@ -18,10 +18,11 @@ import {
   IconCalendarCancel,
   IconMail,
   IconPhone,
+  IconCancel,
 } from '@tabler/icons-react';
 import { useMemo, Dispatch, SetStateAction, useState } from 'react';
 import axios, { isAxiosError } from 'axios';
-import { dateSortDesc, dateToHuman } from '@/lib/dates';
+import { dateSortDesc, dateToHuman, dateToISO } from '@/lib/dates';
 import UserModal from '@/components/digitalContracts/userModal';
 import { DigitalContract, User } from '@/generated/prisma';
 import { ApiGetUsersResponse } from '@/pages/api/users';
@@ -30,6 +31,9 @@ import ContractItem from './contractItem';
 import PayRulesSection from './payRulesSection';
 import { showError, showSuccess } from '@/lib/toast';
 import { axiosErrorToString } from '@/lib/error';
+import CancelContractModal, {
+  CancelContractPayload,
+} from './cancelContractModal';
 
 export default function ActiveUserSection({
   activeUser,
@@ -46,30 +50,42 @@ export default function ActiveUserSection({
     contractOpened,
     { open: openContractModal, close: closeContractModal },
   ] = useDisclosure(false);
+
+  const [
+    cancelContractOpened,
+    { open: openCancelContractModal, close: closeCancelContractModal },
+  ] = useDisclosure(false);
+
+  const [cancelContractLoading, setCancelContractLoading] = useState(false);
   const [contractMode, setContractMode] = useState<'create' | 'edit'>('create');
   const [contractInitial, setContractInitial] =
     useState<Partial<DigitalContract> | null>(null);
 
   const contracts = activeUser?.contracts || [];
+  const today = dateToISO(new Date());
+
   const current = useMemo(() => {
-    const now = new Date();
     return (
-      contracts.find(
-        (c) =>
-          new Date(c.validFrom) <= now &&
-          (!c.validUntil || new Date(c.validUntil) >= now)
-      ) ||
-      contracts.find((c) => !c.validUntil) ||
-      null
+      contracts.find((contract) => {
+        const validFrom = dateToISO(contract.validFrom);
+        const validUntil = contract.validUntil
+          ? dateToISO(contract.validUntil)
+          : null;
+
+        return validFrom <= today && (!validUntil || validUntil >= today);
+      }) || null
     );
-  }, [contracts]);
+  }, [contracts, today]);
 
   const past = useMemo(
     () =>
       contracts
-        .filter((c) => c.validUntil && new Date(c.validUntil) < new Date())
+        .filter(
+          (contract) =>
+            contract.validUntil && dateToISO(contract.validUntil) < today,
+        )
         .sort((a, b) => dateSortDesc(a.validFrom, b.validFrom)),
-    [contracts]
+    [contracts, today],
   );
 
   // --------- USER UPDATE (bereits vorhanden) ----------
@@ -78,14 +94,14 @@ export default function ActiveUserSection({
       id?: string;
       password?: string;
       kioskPin?: string;
-    }
+    },
   ) {
     if (!user.id) return;
 
     try {
       const { data } = await axios.put<User>(`/api/users/${user.id}`, user);
       setUsers((us) =>
-        us.map((u) => (u.id === data.id ? { ...u, ...data } : u))
+        us.map((u) => (u.id === data.id ? { ...u, ...data } : u)),
       );
       showSuccess('Änderungen gespeichert');
       closeUserModal();
@@ -117,7 +133,7 @@ export default function ActiveUserSection({
             hourlyRateCents: null,
             vacationDaysAnnual: null,
             weeklyHours: null,
-          }
+          },
     );
     openContractModal();
   }
@@ -138,20 +154,20 @@ export default function ActiveUserSection({
         {
           contract: payload,
           closeCurrent: true,
-        }
+        },
       );
       // server sollte aktualisierte contracts zurückgeben (oder einzelnen neuen + evtl. aktualisierten alten)
       const updatedContracts = data;
       setUsers((us) =>
         us.map((u) =>
-          u.id === activeUser.id ? { ...u, contracts: updatedContracts } : u
-        )
+          u.id === activeUser.id ? { ...u, contracts: updatedContracts } : u,
+        ),
       );
       showSuccess('Arbeitsbedingungen hinzugefügt');
     } else {
       const { data } = await axios.put(
         `/api/users/${activeUser.id}/contracts/${payload.id}`,
-        payload
+        payload,
       );
       const updated = data;
       setUsers((us) =>
@@ -160,15 +176,68 @@ export default function ActiveUserSection({
             ? {
                 ...u,
                 contracts: (u.contracts || []).map((c) =>
-                  c.id === updated.id ? updated : c
+                  c.id === updated.id ? updated : c,
                 ),
               }
-            : u
-        )
+            : u,
+        ),
       );
       showSuccess('Arbeitsbedingungen gespeichert');
     }
     closeContractModal();
+  }
+
+  function openCancelContract() {
+    if (!activeUser || !current) return;
+    openCancelContractModal();
+  }
+
+  async function cancelCurrentContract(payload: CancelContractPayload) {
+    if (!activeUser || !current) return;
+
+    setCancelContractLoading(true);
+
+    try {
+      const { data } = await axios.post<{
+        contract: DigitalContract;
+        terminationDate: string;
+        deletedShiftsCount: number;
+      }>(`/api/users/${activeUser.id}/contracts/${current.id}/cancel`, payload);
+
+      setUsers((users) =>
+        users.map((user) =>
+          user.id === activeUser.id
+            ? {
+                ...user,
+                terminationDate: data.terminationDate as any,
+                contracts: (user.contracts || []).map((contract) =>
+                  contract.id === data.contract.id ? data.contract : contract,
+                ),
+              }
+            : user,
+        ),
+      );
+
+      closeCancelContractModal();
+
+      if (data.deletedShiftsCount > 0) {
+        showSuccess(
+          `Arbeitsverhältnis beendet. ${data.deletedShiftsCount} geplante ${
+            data.deletedShiftsCount === 1 ? 'Schicht wurde' : 'Schichten wurden'
+          } gelöscht.`,
+        );
+      } else {
+        showSuccess('Arbeitsverhältnis wurde beendet.');
+      }
+    } catch (error) {
+      if (isAxiosError(error)) {
+        showError(axiosErrorToString(error));
+      } else {
+        showError('Das Arbeitsverhältnis konnte nicht beendet werden.');
+      }
+    } finally {
+      setCancelContractLoading(false);
+    }
   }
 
   return (
@@ -262,15 +331,27 @@ export default function ActiveUserSection({
           <Card withBorder radius="lg" p="md">
             <Group justify="space-between" mb="xs">
               <div className="font-semibold">Aktuelle Vereinbarungen</div>
-              {current && (
-                <Button
-                  size="xs"
-                  leftSection={<IconEdit size={14} />}
-                  onClick={openEditCurrent}
-                >
-                  Aktuellen Vertrag bearbeiten
-                </Button>
-              )}
+              <Group>
+                {current && (
+                  <Button
+                    size="xs"
+                    leftSection={<IconEdit size={14} />}
+                    onClick={openEditCurrent}
+                  >
+                    Aktuellen Vertrag bearbeiten
+                  </Button>
+                )}
+                {current && (
+                  <Button
+                    size="xs"
+                    color="red"
+                    leftSection={<IconCancel size={14} />}
+                    onClick={openCancelContract}
+                  >
+                    Arbeitsverhältnis beenden
+                  </Button>
+                )}
+              </Group>
             </Group>
             <Divider mb="md" />
             {current ? (
@@ -286,8 +367,8 @@ export default function ActiveUserSection({
               onLocalChange={(next) => {
                 setUsers((list) =>
                   list.map((u) =>
-                    u.id === activeUser.id ? { ...u, payRules: next } : u
-                  )
+                    u.id === activeUser.id ? { ...u, payRules: next } : u,
+                  ),
                 );
               }}
             />
@@ -324,6 +405,16 @@ export default function ActiveUserSection({
               initial={contractInitial}
               userId={activeUser.id}
               onSubmit={saveContract}
+            />
+          )}
+
+          {activeUser && (
+            <CancelContractModal
+              opened={cancelContractOpened}
+              onClose={closeCancelContractModal}
+              contract={current}
+              loading={cancelContractLoading}
+              onSubmit={cancelCurrentContract}
             />
           )}
         </Stack>
