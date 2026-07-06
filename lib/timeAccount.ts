@@ -175,6 +175,7 @@ export async function calculateWorkingStats(
           },
         },
       },
+      manualAdjustments: true,
       contracts: {
         where: {
           validFrom: { lte: eoy },
@@ -216,6 +217,12 @@ export async function calculateWorkingStats(
       (e) => e.user.id === userId,
     );
     if (!userStats) return 0;
+    const manualAdjustment = users
+      .find((u) => u.id === userId)
+      ?.manualAdjustments.find((ma) => ma.year === year - 1);
+
+    if (manualAdjustment)
+      return userStats.overtime - manualAdjustment.hoursAdjustment.toNumber();
     return userStats.overtime;
   };
 
@@ -223,21 +230,21 @@ export async function calculateWorkingStats(
   for (const u of users) {
     const entry = {
       user: { id: u.id, firstName: u.firstName, lastName: u.lastName },
-      mHours: 0, // X
-      mHoursPlan: 0, // X
-      mHoursPlanned: 0, // X
-      yHours: 0, // X
-      yHoursPlan: 0, // X
-      yHoursPlanned: 0, // X
-      overtime: 0, // X
-      overtimePlanned: 0, // X
+      mHours: 0,
+      mHoursPlan: 0,
+      mHoursPlanned: 0,
+      yHours: 0,
+      yHoursPlan: 0,
+      yHoursPlanned: 0,
+      overtime: 0,
+      overtimePlanned: 0,
       overtimePrevYear: getRestOvertime(u.id),
-      mVacation: 0, // X
-      yVacation: 0, // X
-      yVacationPlan: 0, // X
-      rVacationPrevYear: getRestVacation(u.id), //
-      mSickDays: 0, // X
-      ySickDays: 0, // X
+      mVacation: 0,
+      yVacation: 0,
+      yVacationPlan: 0,
+      rVacationPrevYear: getRestVacation(u.id),
+      mSickDays: 0,
+      ySickDays: 0,
     };
 
     const sickDaySet = new Set();
