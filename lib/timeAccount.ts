@@ -175,7 +175,6 @@ export async function calculateWorkingStats(
           },
         },
       },
-      manualAdjustments: true,
       contracts: {
         where: {
           validFrom: { lte: eoy },
@@ -217,12 +216,6 @@ export async function calculateWorkingStats(
       (e) => e.user.id === userId,
     );
     if (!userStats) return 0;
-    const manualAdjustment = users
-      .find((u) => u.id === userId)
-      ?.manualAdjustments.find((ma) => ma.year === year - 1);
-
-    if (manualAdjustment)
-      return userStats.overtime - manualAdjustment.hoursAdjustment.toNumber();
     return userStats.overtime;
   };
 
@@ -347,9 +340,8 @@ export async function calculateWorkingStats(
     entry.ySickDays = sickDaySet.size;
     list.push({
       ...entry,
-      overtime: entry.yHours - entry.yHoursPlan + getRestOvertime(u.id),
-      overtimePlanned:
-        entry.yHoursPlanned - entry.yHoursPlan + getRestOvertime(u.id),
+      overtime: entry.yHours - entry.yHoursPlan,
+      overtimePlanned: entry.yHoursPlanned - entry.yHoursPlan,
     });
   }
   return list;
