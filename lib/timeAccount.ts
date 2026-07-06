@@ -147,7 +147,7 @@ export async function calculateWorkingStats(
 ): Promise<WorkingStatsEntry[]> {
   const boy = new Date(year, 0, 1, 0, 0, 0, 0);
   const eoy = new Date(year + 1, 0, 0, 23, 59, 59, 999);
-  const eotf = new Date(year, month + 1, 0, 23, 59, 59, 999);
+  const eotf = new Date(year, month + 1, 0, 21, 59, 59, 999);
 
   const users = await prisma.user.findMany({
     where: {
