@@ -87,6 +87,7 @@ export default function PlannerGridMonth({
   const days = daysInMonth(year, month);
   const headerDates = Array.from({ length: days }, (_, i) => i + 1);
   const today = new Date();
+  const isPast = new Date(year, month) < today;
 
   const taFetcher = () =>
     axios
@@ -186,6 +187,16 @@ export default function PlannerGridMonth({
           {/* Rows */}
           {employees.map((emp) => {
             const empTaData = taData?.find((d) => d.user.id === emp.id);
+            const overtime = empTaData
+              ? isPast
+                ? empTaData.overtime
+                : empTaData.overtimePlanned
+              : null;
+            const mHours = empTaData
+              ? isPast
+                ? empTaData.mHours
+                : empTaData.mHoursPlanned
+              : null;
             return (
               <Fragment key={emp.id}>
                 {/* Sticky name cell + row action */}
@@ -221,8 +232,8 @@ export default function PlannerGridMonth({
                         className={isLoading ? 'animate-pulse' : ''}
                       >
                         STD:{' '}
-                        {empTaData
-                          ? `${numFormat(empTaData.mHoursPlanned)}/${numFormat(
+                        {mHours && empTaData
+                          ? `${numFormat(mHours)}/${numFormat(
                               empTaData.mHoursPlan,
                             )}`
                           : '...'}
@@ -232,18 +243,15 @@ export default function PlannerGridMonth({
                       <Text
                         size="xs"
                         c={
-                          empTaData
-                            ? empTaData.overtimePlanned >= 0
+                          overtime
+                            ? overtime >= 0
                               ? 'green'
                               : 'red'
                             : 'dimmed'
                         }
                         className={isLoading ? 'animate-pulse' : ''}
                       >
-                        ÜS:{' '}
-                        {empTaData
-                          ? numFormat(empTaData.overtimePlanned)
-                          : '...'}
+                        ÜS: {overtime ? numFormat(overtime) : '...'}
                       </Text>
                     </Tooltip>
                   </div>
