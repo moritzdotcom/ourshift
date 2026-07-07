@@ -188,7 +188,7 @@ export default function TimeAccountUserPage() {
       </div>
       <Group justify="space-between" align="flex-start" mb="md">
         <Stack gap={2}>
-          <Title order={3}>Zeitarbeitskonto - Detail</Title>
+          <Title order={3}>Arbeitszeitkonto - Detail</Title>
           {currentUserName && (
             <Text c="dimmed">
               {currentUserName} · Jahr {year}

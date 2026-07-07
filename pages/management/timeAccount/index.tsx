@@ -60,7 +60,7 @@ export default function TimeAccountSimple() {
       <div className="p-6">
         <Group justify="space-between">
           <Stack gap={2}>
-            <Title order={3}>Zeitarbeitskonto</Title>
+            <Title order={3}>Arbeitszeitkonto</Title>
             {updatedAt && (
               <Text c="dimmed">
                 Berechnung am: {dateTimeToHuman(updatedAt)}

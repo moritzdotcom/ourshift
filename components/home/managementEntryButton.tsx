@@ -98,7 +98,7 @@ export default function ManagementEntryButton() {
               <IconClock2 size={18} stroke={1.5} />
               <Box>
                 <Text fz="sm" fw={500} c="gray.9">
-                  Zeitarbeitskonto
+                  Arbeitszeitkonto
                 </Text>
                 <Text fz={11} c="dimmed" lh={1.4}>
                   Stunden & Urlaub einsehen

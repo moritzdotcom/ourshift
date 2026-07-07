@@ -43,7 +43,7 @@ export default function ManagementLayout({
   const { user } = useCurrentUser();
 
   const { data: requestCount } = useSWR('/api/changeRequests/count', () =>
-    axios.get<number>('/api/changeRequests/count').then((r) => r.data)
+    axios.get<number>('/api/changeRequests/count').then((r) => r.data),
   );
 
   const groups = [
@@ -63,7 +63,7 @@ export default function ManagementLayout({
           role: 'MANAGER',
         },
         {
-          label: 'Zeitarbeitskonto',
+          label: 'Arbeitszeitkonto',
           icon: IconClock2,
           href: '/management/timeAccount',
           role: 'MANAGER',

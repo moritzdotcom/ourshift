@@ -136,6 +136,12 @@ export default function TimeAccountUserPage() {
       variant: 'bold' as const,
     },
     {
+      key: 'overtimeAccumulated' as const,
+      label: 'Überstunden kumuliert',
+      type: 'hours',
+      variant: 'light' as const,
+    },
+    {
       key: 'totalVacation' as const,
       label: 'Urlaub Ist',
       type: 'days',
@@ -192,10 +198,19 @@ export default function TimeAccountUserPage() {
       | 'sickHours'
       | 'plannedHours'
       | 'overtime'
+      | 'overtimeAccumulated'
       | 'totalVacation'
       | 'plannedVacation'
       | 'sickDays',
   ) {
+    if (key === 'overtimeAccumulated') {
+      return (
+        data?.monthlyData.reduce(
+          (sum, d) => sum + (d.month <= monthIndex ? d.overtime : 0),
+          0,
+        ) || 0
+      );
+    }
     const m = data?.monthlyData.find((m) => m.month === monthIndex);
     if (!m) return 0;
     return m[key];
@@ -218,6 +233,7 @@ export default function TimeAccountUserPage() {
       | 'sickHours'
       | 'plannedHours'
       | 'overtime'
+      | 'overtimeAccumulated'
       | 'totalVacation'
       | 'plannedVacation'
       | 'sickDays',
@@ -232,6 +248,9 @@ export default function TimeAccountUserPage() {
         data.monthlyData.reduce((sum, m) => sum + m[key], 0) + manualAdjustment
       );
     }
+    if (key === 'overtimeAccumulated') {
+      return data.monthlyData.reduce((sum, m) => sum + m.overtime, 0);
+    }
     return data.monthlyData.reduce((sum, m) => sum + m[key], 0);
   }
 
@@ -245,7 +264,7 @@ export default function TimeAccountUserPage() {
         <Group justify="space-between" align="flex-start" mb="md">
           <Stack gap={2}>
             <Group>
-              <Title order={3}>Zeitarbeitskonto - Detail</Title>
+              <Title order={3}>Arbeitszeitkonto - Detail</Title>
               <ActionIcon
                 component={Link}
                 href={`/management/timeAccount/${selectedUserId}/print?year=${year}`}

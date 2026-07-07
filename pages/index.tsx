@@ -18,6 +18,7 @@ import {
   IconAlertTriangle,
   IconInfoCircle,
   IconUserSquare,
+  IconClock2,
 } from '@tabler/icons-react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import TimeChangeRequestModal from '@/components/changeRequest/modal';
@@ -84,7 +85,7 @@ export default function HomePage() {
     () =>
       axios
         .get<WorkingStatsEntry>('/api/users/timeAccount/my')
-        .then((r) => r.data)
+        .then((r) => r.data),
   );
 
   useEffect(() => {
@@ -104,7 +105,7 @@ export default function HomePage() {
         setShifts(
           data.shifts
             .slice()
-            .sort((a, b) => +new Date(a.start) - +new Date(b.start))
+            .sort((a, b) => +new Date(a.start) - +new Date(b.start)),
         );
       } catch (e: any) {
         setErr(e?.response?.data?.error || 'Fehler beim Laden der Schichten');
@@ -150,7 +151,7 @@ export default function HomePage() {
     //   => also: startWithinGrace && endWithinGrace
     const current =
       shifts.find(
-        (s) => !s.clockOut && startWithinGrace(s) && endWithinGrace(s)
+        (s) => !s.clockOut && startWithinGrace(s) && endWithinGrace(s),
       ) ?? null;
 
     // "upcoming":
@@ -159,7 +160,7 @@ export default function HomePage() {
     const upcoming = shifts
       .filter(
         (s) =>
-          !isPast(s) && getStart(s).getTime() - GRACE_MS > nowDate.getTime()
+          !isPast(s) && getStart(s).getTime() - GRACE_MS > nowDate.getTime(),
       )
       .sort((a, b) => +getStart(a) - +getStart(b))
       .slice(0, 8);
@@ -186,7 +187,7 @@ export default function HomePage() {
   function handleChangeReqCreated(data: ApiPostChangeRequestResponse) {
     const { shiftId } = data;
     setShifts((prev) =>
-      prev.map((s) => (s.id == shiftId ? { ...s, changeRequest: data } : s))
+      prev.map((s) => (s.id == shiftId ? { ...s, changeRequest: data } : s)),
     );
   }
 
@@ -287,6 +288,16 @@ export default function HomePage() {
                   Dein Profil
                 </Button>
               </Link>
+              <Link href="/timeAccount">
+                <Button
+                  variant="light"
+                  leftSection={<IconClock2 size={16} />}
+                  color="teal"
+                  fullWidth
+                >
+                  Arbeitszeitkonto
+                </Button>
+              </Link>
               {hasRole(user, 'MANAGER') && <ManagementEntryButton />}
             </div>
           </div>
@@ -301,7 +312,7 @@ export default function HomePage() {
             loading={loading}
             onUpdate={(data) =>
               setShifts((prev) =>
-                prev.map((s) => (s.id === data.id ? { ...s, ...data } : s))
+                prev.map((s) => (s.id === data.id ? { ...s, ...data } : s)),
               )
             }
           />
