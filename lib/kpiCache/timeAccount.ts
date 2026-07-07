@@ -8,7 +8,7 @@ export type TimeAccountPayload = WorkingStatsEntry[];
 export async function recalcMonthTimeAccount(
   y: any,
   m: any,
-  data?: { depsUpdatedAt?: Date }
+  data?: { depsUpdatedAt?: Date },
 ) {
   if (Number.isNaN(y) || Number.isNaN(m))
     return failureResp('cache', undefined, 'Invalid Date Params');
@@ -45,7 +45,7 @@ export async function recalcMonthTimeAccount(
 export async function getOrRecalcTimeAccountKPIs(
   y: number,
   m: number,
-  forceRecalc?: boolean
+  forceRecalc?: boolean,
 ) {
   if (forceRecalc) {
     const resp = await recalcMonthTimeAccount(y, m);
@@ -60,7 +60,7 @@ export async function getOrRecalcTimeAccountKPIs(
 
   const depsUpdatedAt = await getDepsUpdatedAtForMonth(y, m);
   const stale =
-    isStale({ cache: cache ?? undefined }) ||
+    isStale({ cache: cache ?? undefined, maxAgeMs: 1000 * 60 * 60 * 24 }) ||
     !cache?.depsUpdatedAt ||
     depsUpdatedAt > (cache?.depsUpdatedAt ?? new Date(0));
 

@@ -340,6 +340,11 @@ export async function calculateWorkingStats(
           },
         },
       },
+      manualAdjustments: {
+        where: {
+          year: year - 1,
+        },
+      },
       contracts: {
         where: {
           validFrom: { lte: eoy },
@@ -391,7 +396,12 @@ export async function calculateWorkingStats(
 
     if (!userStats) return 0;
 
-    return userStats.overtime;
+    const manualAdjustment = users.find((u) => u.id === userId)
+      ?.manualAdjustments[0];
+
+    return (
+      userStats.overtime + (manualAdjustment?.hoursAdjustment.toNumber() || 0)
+    );
   };
 
   const list: WorkingStatsEntry[] = [];
@@ -445,9 +455,7 @@ export async function calculateWorkingStats(
 
       if (!contract) continue;
 
-      const monthlyHoursPlan = Math.round(
-        toNumber(contract.weeklyHours) * (52 / 12),
-      );
+      const monthlyHoursPlan = toNumber(contract.weeklyHours) * (52 / 12);
 
       const { end: endOfMonth } = monthRangeInTimeZone(year, m);
       const isFutureMonth = now <= endOfMonth;
