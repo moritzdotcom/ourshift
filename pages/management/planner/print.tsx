@@ -87,6 +87,9 @@ export default function PlannerPrintPage() {
       const d = new Date(s.start).getDate();
       const code = s.code;
       const userShifts = m.get(s.userId);
+      if (s.userId === 'fea4b516-81a5-4ade-ab86-bfd085c2f6e6') {
+        console.log(s);
+      }
       if (!userShifts) continue;
       const prev = userShifts.get(d);
       userShifts.set(d, prev ? [...prev, code] : [code]);
