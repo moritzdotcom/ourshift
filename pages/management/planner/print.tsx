@@ -81,23 +81,18 @@ export default function PlannerPrintPage() {
     [shifts],
   );
   const byUserDay = useMemo(() => {
-    const m = new Map<string, Map<number, Array<ShiftCode | 'K' | 'U' | ''>>>();
+    const m = new Map<string, Map<string, Array<ShiftCode | 'K' | 'U' | ''>>>();
     for (const id of userIds) m.set(id, new Map());
     for (const s of shifts) {
-      const d = new Date(s.start).getDate();
+      const d = `${new Date(s.start).getDate()}-${new Date(s.start).getMonth()}`;
       const code = s.code;
       const userShifts = m.get(s.userId);
-      if (s.userId === 'fea4b516-81a5-4ade-ab86-bfd085c2f6e6') {
-        console.log(s);
-      }
       if (!userShifts) continue;
       const prev = userShifts.get(d);
       userShifts.set(d, prev ? [...prev, code] : [code]);
     }
     return m;
   }, [shifts, userIds]);
-
-  console.log(byUserDay);
 
   function findHoliday(iso: string) {
     return holidays.find(
@@ -236,7 +231,9 @@ export default function PlannerPrintPage() {
                       </div>
                       {days.map((d) => {
                         const codes =
-                          byUserDay.get(u.id)?.get(d.getDate()) ?? null;
+                          byUserDay
+                            .get(u.id)
+                            ?.get(`${d.getDate()}-${d.getMonth()}`) ?? null;
                         return (
                           <div
                             className={`${renderBgColor(
