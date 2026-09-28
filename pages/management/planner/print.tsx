@@ -86,12 +86,15 @@ export default function PlannerPrintPage() {
     for (const s of shifts) {
       const d = new Date(s.start).getDate();
       const code = s.code;
-      const mm = m.get(s.userId)!;
-      const prev = mm.get(d);
-      mm.set(d, prev ? [...prev, code] : [code]);
+      const userShifts = m.get(s.userId);
+      if (!userShifts) continue;
+      const prev = userShifts.get(d);
+      userShifts.set(d, prev ? [...prev, code] : [code]);
     }
     return m;
   }, [shifts, userIds]);
+
+  console.log(byUserDay);
 
   function findHoliday(iso: string) {
     return holidays.find(
@@ -240,7 +243,10 @@ export default function PlannerPrintPage() {
                           >
                             {codes ? (
                               codes.map((c) => (
-                                <ShiftCodeBadge code={c}>
+                                <ShiftCodeBadge
+                                  code={c}
+                                  key={`${u.id}-${d.getDate()}-${shiftCodeBadgeContent(c)}`}
+                                >
                                   {shiftCodeBadgeContent(c)}
                                 </ShiftCodeBadge>
                               ))
