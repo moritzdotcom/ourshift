@@ -189,8 +189,8 @@ export default function PlannerGridMonth({
             const empTaData = taData?.find((d) => d.user.id === emp.id);
             const overtime = empTaData
               ? isPast
-                ? empTaData.overtime
-                : empTaData.overtimePlanned
+                ? empTaData.overtime + empTaData.overtimePrevYear
+                : empTaData.overtimePlanned + empTaData.overtimePrevYear
               : null;
             const mHours = empTaData
               ? isPast
